@@ -24,7 +24,8 @@ def main():
     if decision == '1':
         login()
     else:
-        register()
+        conn = sqlite3.connect('user_database.db')
+        register(conn)
 
 
 def login():
@@ -115,7 +116,7 @@ def learn_skill():
         logged_in()
 
 
-def register():
+def register(conn):
     # Ensure there are less than 5 registered users
     num_users = num_registered_users()
     if num_users >= 5:
@@ -131,17 +132,20 @@ def register():
         print('This username is already taken. Please select another')
         username = input('Enter username: ')
 
+   # print("Here1")
     password = input('Enter password: ')
+   # print("Here2")
     while (not any(char.isupper() for char in password) or
             not any(char.isdigit() for char in password) or
             not any(char in '!@#$%^&*()_+' for char in password) or
             len(password) < 8 or len(password) > 12):
         print('Password must contain a capital letter, a digit, a special character, '
               'and be between 8-12 characters in length')
+        #print("Here3")
         password = input('Enter password: ')
+        #print("Here4")
 
     # Insert account into database
-    conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
     db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
     conn.commit()
@@ -155,6 +159,7 @@ def username_exists(username):
     # Check if user exists in database
     db.execute("SELECT 1 FROM users WHERE username=?", (username,))
     output = db.fetchone()
+    print("danieldebug", output)
     conn.close()
     return output is not None
 
