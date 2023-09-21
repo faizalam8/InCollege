@@ -6,26 +6,69 @@ def main():
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
     # Create database if it doesn't already exist
-    db.execute('''CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)''')
+    db.execute('''CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT,
+    first_name TEXT, last_name TEXT)''')
     # Close connection
     conn.close()
     print('=========================================================================')
     print('Welcome to InCollege! Would you like to log in or register a new account?')
     print('=========================================================================')
 
+    print("SUCCESS STORY: I've been using InCollege for only three months and have managed to land "
+          "two Software Engineering roles! This site has helped me obtain the necessary skills to "
+          "apply, interview, and succeed in the industry.")
     print('1. Login')
     print('2. Register new account')
+    print('3. Play video')
+    print('4. Search by name')
 
     decision = input("")
-    while decision != '1' and decision != '2':
-        print('Please enter 1 or 2')
+    while decision != '1' and decision != '2' and decision != '3' and decision != '4':
+        print('Please enter 1, 2, or 3')
         decision = input("")
 
     if decision == '1':
         login()
-    else:
+    elif decision == '2':
         conn = sqlite3.connect('user_database.db')
         register(conn)
+    elif decision == '3':
+        print('Video is now playing')
+        print('1. Go Back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        main()
+    else:
+        f_name = input("First: ")
+        l_name = input("Last: ")
+        search_by_name(f_name, l_name)
+
+
+def search_by_name(f_name, l_name):
+    # Query for user by name
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+    db.execute("SELECT * FROM users WHERE first_name=? AND last_name=?", (f_name, l_name))
+    user = db.fetchone()
+    conn.close()
+
+    if not user:
+        print('They are not yet a part of the InCollege system yet')
+        print('1. Go Back')
+        decision = input("")
+        while decision != '1':
+            print('Please enter 1 to go back')
+            decision = input('')
+        main()
+    else:
+        print('They are a part of the InCollege system')
+        print('1. Go Back')
+        decision = input("")
+        while decision != '1':
+            print('Please enter 1 to go back')
+            decision = input('')
+        main()
 
 
 def login():
@@ -126,28 +169,31 @@ def register(conn):
     print('Registration Page')
     print('==================')
 
+    # Retrieve names
+    f_name = input('First name: ')
+    l_name = input('Last name: ')
     username = input('Enter username: ')
+
     # Check if username exists
     while username_exists(username):
         print('This username is already taken. Please select another')
         username = input('Enter username: ')
 
-   # print("Here1")
+    # Get password input
     password = input('Enter password: ')
-   # print("Here2")
     while (not any(char.isupper() for char in password) or
             not any(char.isdigit() for char in password) or
             not any(char in '!@#$%^&*()_+' for char in password) or
             len(password) < 8 or len(password) > 12):
         print('Password must contain a capital letter, a digit, a special character, '
               'and be between 8-12 characters in length')
-        #print("Here3")
         password = input('Enter password: ')
-        #print("Here4")
 
     # Insert account into database
     db = conn.cursor()
-    db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+    db.execute("INSERT INTO users (username, password, first_name, last_name) VALUES (?, ?, ?, ?)",
+               (username, password, f_name, l_name))
+
     conn.commit()
     conn.close()
 
@@ -159,7 +205,6 @@ def username_exists(username):
     # Check if user exists in database
     db.execute("SELECT 1 FROM users WHERE username=?", (username,))
     output = db.fetchone()
-    print("danieldebug", output)
     conn.close()
     return output is not None
 
