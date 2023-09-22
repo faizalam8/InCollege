@@ -121,9 +121,29 @@ def logged_in():
 
 
 def job_search():
-    print('Under construction')
-
-
+    print('=====')
+    job = sqlite3.connect("jobs.db")
+    db = job.cursor()
+    db.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT PRIMARY KEY,description TEXT,employer TEXT,location TEXT,salary TEXT)'''
+    job.commit()
+    #code below helps post a job
+    num = input("How many jobs do you want to post?")
+    if( num <= 5):
+        title = input("Enter the job title:")
+        description = input("Enter the job description:")
+        employer = input("Enter the employer name:")
+        location = input("Enter the job location:")
+        salary = string(input("Enter the job salary:"))
+        
+        #job = sqlite3.connect("jobs.db")
+        #db = job.cursor()
+        db.execute('''INSERT INTO jobs (title, description, employer, location, salary) VALUES (?, ?, ?, ?, ?)''', (title, description, employer, location, salary))
+        job.commit()
+        print("Sucess! Your job has been posted!")
+        job.close()
+    else: 
+        print("The number of jobs that can be posted is only upto 5 jobs!")
+    
 def find_user():
     print('Under construction')
 
