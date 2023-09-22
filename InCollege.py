@@ -129,26 +129,27 @@ def job_search():
     print('=====')
     job = sqlite3.connect("jobs.db")
     db = job.cursor()
-    db.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT PRIMARY KEY,description TEXT,employer TEXT,location TEXT,salary TEXT)'''
+    db.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT PRIMARY KEY,description TEXT,employer TEXT,location TEXT,salary TEXT, firstName TEXT, lastName TEXT)'''
     job.commit()
-    choice = int(input('Would you like to go to the previous page or would you like to post your job? Type 1 to go back and 2 to continue.'))
-    if(choice == 1):
-        print("Going back to the previous page")
-        logged_in()
-    elif(choice == 2):
+    #choice = int(input('Would you like to go to the previous page or would you like to post your job? Type 1 to go back and 2 to continue.'))
+    #if(choice == 1):
+     #   print("Going back to the previous page")
+      #  logged_in()
+    #elif(choice == 2):
         
-        #code below helps post a job
-        num = input("How many jobs do you want to post?")
-        if(num <= 5):
-            title = input("Enter the job title:")
-            description = input("Enter the job description:")
-            employer = input("Enter the employer name:")
-            location = input("Enter the job location:")
-            salary = string(input("Enter the job salary:"))
-        
+    #code below helps post a job
+    #num = input("How many jobs do you want to post?")
+    #if(num <= 5):
+        title = input("Enter the job title:")
+        description = input("Enter the job description:")
+        employer = input("Enter the employer name:")
+        location = input("Enter the job location:")
+        salary = string(input("Enter the job salary:"))
+        firstName= input("Enter the employer's first name:")
+        lastName = input("Enter the employer's last name:")
             #job = sqlite3.connect("jobs.db")
             #db = job.cursor()
-            db.execute('''INSERT INTO jobs (title, description, employer, location, salary) VALUES (?, ?, ?, ?, ?)''', (title, description, employer, location, salary))
+            db.execute('''INSERT INTO jobs (title, description, employer, location, salary, firstName, lastName) VALUES (?, ?, ?, ?, ?, ?, ?)''', (title, description, employer, location, salary, firstName, lastName))
             job.commit()
             print("Sucess! Your job has been posted!")
             job.close()
