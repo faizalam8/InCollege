@@ -104,20 +104,25 @@ def logged_in():
     print('1. Job Search')
     print('2. User Search')
     print('3. Learn Skill')
+    print('4. Go back')
 
     # Get user input
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3':
-        print('Please enter 1, 2, or 3')
-        decision = input("")
-
-    # Route input to proper function
-    if decision == '1':
-        job_search()
-    elif decision == '2':
-        find_user()
+    if(decision == 4):
+        print("Going back to previous page")
+        login()
     else:
-        learn_skill()
+        while decision != '1' and decision != '2' and decision != '3':
+            print('Please enter 1, 2, or 3')
+            decision = input("")
+
+        # Route input to proper function
+        if decision == '1':
+            job_search()
+        elif decision == '2':
+            find_user()
+        else:
+            learn_skill()
 
 
 def job_search():
@@ -126,7 +131,7 @@ def job_search():
     db = job.cursor()
     db.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT PRIMARY KEY,description TEXT,employer TEXT,location TEXT,salary TEXT)'''
     job.commit()
-    choice = int(input('Would you like to go to the previous page or would you like to post your job? Type 1 to go back and 2 to continue'))
+    choice = int(input('Would you like to go to the previous page or would you like to post your job? Type 1 to go back and 2 to continue.'))
     if(choice == 1):
         print("Going back to the previous page")
         logged_in()
