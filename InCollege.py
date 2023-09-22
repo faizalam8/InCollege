@@ -126,27 +126,52 @@ def job_search():
     db = job.cursor()
     db.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT PRIMARY KEY,description TEXT,employer TEXT,location TEXT,salary TEXT)'''
     job.commit()
-    #code below helps post a job
-    num = input("How many jobs do you want to post?")
-    if( num <= 5):
-        title = input("Enter the job title:")
-        description = input("Enter the job description:")
-        employer = input("Enter the employer name:")
-        location = input("Enter the job location:")
-        salary = string(input("Enter the job salary:"))
+    choice = int(input('Would you like to go to the previous page or would you like to post your job? Type 1 to go back and 2 to continue'))
+    if(choice == 1):
+        print("Going back to the previous page")
+        logged_in()
+    elif(choice == 2):
         
-        #job = sqlite3.connect("jobs.db")
-        #db = job.cursor()
-        db.execute('''INSERT INTO jobs (title, description, employer, location, salary) VALUES (?, ?, ?, ?, ?)''', (title, description, employer, location, salary))
-        job.commit()
-        print("Sucess! Your job has been posted!")
-        job.close()
-    else: 
-        print("The number of jobs that can be posted is only upto 5 jobs!")
-    
+        #code below helps post a job
+        num = input("How many jobs do you want to post?")
+        if(num <= 5):
+            title = input("Enter the job title:")
+            description = input("Enter the job description:")
+            employer = input("Enter the employer name:")
+            location = input("Enter the job location:")
+            salary = string(input("Enter the job salary:"))
+        
+            #job = sqlite3.connect("jobs.db")
+            #db = job.cursor()
+            db.execute('''INSERT INTO jobs (title, description, employer, location, salary) VALUES (?, ?, ?, ?, ?)''', (title, description, employer, location, salary))
+            job.commit()
+            print("Sucess! Your job has been posted!")
+            job.close()
+        else: 
+            print("The number of jobs that can be posted is only upto 5 jobs!")
+    else:
+        print("Wrong input! Please try again.")
+        
 def find_user():
-    print('Under construction')
+    #Option to connect with people 
+    choice = int(input('Would you like to connect to people who could help you? Type 1 for yes or 2 for no.'))
+    if(choice == 1):
+        name = input('Who would you like to search for? Enter their username here:')
+        if(username_exists(name)):
+            print("Username found!")
+        else:
+            print("Username not found. Please input another username")
 
+    elif(choice == 2):#option to go back
+        choice1 = int(input('Understood. Would you like to go back to the display page? Type 1 for yes and 2 for no'))
+        if(choice1 == 1):
+            logged_in()
+        elif(choice1 == 2):
+            print("You will now be exiting the site")
+        else:
+            print("Wrong input! Please try again!")
+    else:
+        print("Wrong choice! Please try again!")
 
 def learn_skill():
     print('======')
