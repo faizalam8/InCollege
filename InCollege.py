@@ -1,5 +1,9 @@
 import sqlite3
 
+# Global vars to keep track of logged-in user
+LOGGED_IN_FIRST = ""
+LOGGED_IN_LAST = ""
+
 
 def main():
     # Initialize database connection
@@ -24,7 +28,7 @@ def main():
 
     decision = input("")
     while decision != '1' and decision != '2' and decision != '3' and decision != '4':
-        print('Please enter 1, 2, or 3')
+        print('Please enter 1, 2, 3, or 4')
         decision = input("")
 
     if decision == '1':
@@ -58,7 +62,6 @@ def search_by_name(f_name, l_name):
         print('1. Go Back')
         decision = input("")
         while decision != '1':
-            print('Please enter 1 to go back')
             decision = input('')
         main()
     else:
@@ -66,7 +69,6 @@ def search_by_name(f_name, l_name):
         print('1. Go Back')
         decision = input("")
         while decision != '1':
-            print('Please enter 1 to go back')
             decision = input('')
         main()
 
@@ -89,6 +91,9 @@ def login():
     conn.close()
 
     if output is not None:
+        global LOGGED_IN_FIRST, LOGGED_IN_LAST
+        LOGGED_IN_FIRST = output[2]
+        LOGGED_IN_LAST = output[3]
         print('You have successfully logged in')
         logged_in()
     else:
@@ -104,11 +109,12 @@ def logged_in():
     print('1. Job Search')
     print('2. User Search')
     print('3. Learn Skill')
+    print('4. Logout')
 
     # Get user input
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3':
-        print('Please enter 1, 2, or 3')
+    while decision != '1' and decision != '2' and decision != '3' and decision != '4':
+        print('Please enter 1, 2, 3, or 4')
         decision = input("")
 
     # Route input to proper function
@@ -116,16 +122,94 @@ def logged_in():
         job_search()
     elif decision == '2':
         find_user()
-    else:
+    elif decision == '3':
         learn_skill()
+    else:
+        # Empty global vars upon logout
+        global LOGGED_IN_FIRST, LOGGED_IN_LAST
+        LOGGED_IN_FIRST, LOGGED_IN_LAST = "", ""
+        main()
 
 
 def job_search():
-    print('Under construction')
+    print('=====')
+    print('Jobs')
+    print('=====')
+
+    # Create jobs database
+    conn = sqlite3.connect("jobs.db")
+    db = conn.cursor()
+    db.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT PRIMARY KEY,description TEXT,employer TEXT,
+    location TEXT,salary TEXT, firstName TEXT, lastName TEXT)''')
+    conn.commit()
+    conn.close()
+
+    # Create new job or search for a job
+    print('1. Search for a job')
+    print('2. Post a job')
+    print('3. Go back')
+    decision = input("")
+    while decision != '1' and decision != '2' and decision != '3':
+        print('Please enter 1, 2, or 3')
+        decision = input("")
+
+    if decision == '2':
+        post_job()
+    elif decision == '3':
+        logged_in()
+    else:
+        # JOB SEARCH IMPLEMENTATION [NOT COMPLETE]
+        print('Under construction')
+        print('1. Go back')
+        decision = input("")
+        while decision != "1":
+            decision = input("")
+        job_search()
+
+
+def post_job():
+    if num_jobs() >= 5:
+        print('5 jobs have already been posted')
+        print('1. Go back')
+        decision = input("")
+        while decision != "1":
+            decision = input("")
+        job_search()
+
+    title = input("Job title: ")
+    description = input("Description: ")
+    employer = input("Employer: ")
+    location = input("Location: ")
+    salary = input("Salary: ")
+
+    conn = sqlite3.connect("jobs.db")
+    db = conn.cursor()
+    db.execute('''INSERT INTO jobs (title, description, employer, location, salary, firstName, lastName)
+     VALUES (?, ?, ?, ?, ?, ?, ?)''', (title, description, employer, location, salary, LOGGED_IN_FIRST, LOGGED_IN_LAST))
+    conn.commit()
+    conn.close()
+    print("Success! Your job has been posted")
 
 
 def find_user():
-    print('Under construction')
+    # Search for user by username
+    username_input = input("Username: ")
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+    db.execute("SELECT 1 FROM users WHERE username=?", (username_input,))
+    output = db.fetchone()
+    conn.close()
+
+    if output:
+        print('User found!')
+    else:
+        print('User not found')
+
+    print('1. Go back')
+    decision = input("")
+    while decision != "1":
+        decision = input("")
+    logged_in()
 
 
 def learn_skill():
@@ -157,6 +241,12 @@ def learn_skill():
         print("Under construction")
     else:
         logged_in()
+
+    print('1. Go back')
+    decision = input("")
+    while decision != "1":
+        decision = input("")
+    learn_skill()
 
 
 def register(conn):
@@ -215,6 +305,16 @@ def num_registered_users():
 
     # Retrieve and return user count
     db.execute("SELECT COUNT(*) FROM users")
+    result = db.fetchone()
+    conn.close()
+    return result[0]
+
+
+def num_jobs():
+    # Return total job count
+    conn = sqlite3.connect("jobs.db")
+    db = conn.cursor()
+    db.execute("SELECT COUNT(*) FROM jobs")
     result = db.fetchone()
     conn.close()
     return result[0]
