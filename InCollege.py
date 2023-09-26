@@ -25,10 +25,13 @@ def main():
     print('2. Register new account')
     print('3. Play video')
     print('4. Search by name')
+    print('5. Exit')
 
     decision = input("")
     while decision != '1' and decision != '2' and decision != '3' and decision != '4':
-        print('Please enter 1, 2, 3, or 4')
+        if decision == '5':
+            break
+        print('Please enter 1, 2, 3, 4, or 5')
         decision = input("")
 
     if decision == '1':
@@ -43,7 +46,7 @@ def main():
         while decision != '1':
             decision = input("")
         main()
-    else:
+    elif decision == '4':
         f_name = input("First: ")
         l_name = input("Last: ")
         search_by_name(f_name, l_name)
