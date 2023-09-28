@@ -26,13 +26,14 @@ def main():
     print('3. Play video')
     print('4. Search by name')
     print('5. Useful Links')
-    print('6. Exit')
+    print('6. InCollege Important Links')
+    print('7. Exit')
 
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5':
-        if decision == '6':
+    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5' and decision != '6':
+        if decision == '7':
             break
-        print('Please enter 1, 2, 3, 4, or 5')
+        print('Please enter 1, 2, 3, 4, 5 or 6')
         decision = input("")
 
     if decision == '1':
@@ -54,6 +55,8 @@ def main():
     elif decision == '5':
         logged_in = False
         useful_links(logged_in, conn)
+    elif decision == '6':
+        policies()
 
 
 
