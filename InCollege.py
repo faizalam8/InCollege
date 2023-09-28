@@ -390,6 +390,91 @@ def general_links(logged_in, conn):
     else:
         print("Invalid choice. Please select a valid option.")
         general_links(logged_in, conn)
+        
+def GuestControls():
+    print("This is the Guest Controls Section")
+    print("All the guest options are turned on when you create an account, but you can turn them off here")
+    print("Here are the options")
+    print("1. InCollege Email, 2. SMS, 3. Targeted Advertising Features 4. Languages")
+    choice = input("Please enter your choice:")
+     while choice != '1' and choice != '2' and choice != '3' and choice != '4':
+        print("Enter 1 - 4 to make a selection")
+        decision = input("Please enter your choice")
+    if(choice == '1'):
+        decision = input("Would you like to turn off our updates to your InCollege email? Type 1 for yes or 2 for no")
+        if(decision == '1'):
+            print("Updates to your InCollege Email have been turned off")
+        else:
+            print("Updates to your InCollege Email are on")
+            
+    elif(choice == '2'):
+        decision = input("Would you like to turn off our updates to your SMS? Type 1 for yes or 2 for no")
+        if(decision == '1'):
+            print("Updates to your SMS have been turned off")
+        else:
+            print("Updates to your SMS are on")
+            
+    elif(choice == '3'):
+        decision = input("Would you like to turn off Advertising Features? Type 1 for yes or 2 for no")
+        if(decision == '1'):
+            print("Advertising Features have been turned off")
+        else:
+            print("Advertising Features are on")
 
+    elif(choice == '4'):
+        decision = input("Would you like to change the language to Spanish? Type 1 for yes or 2 for no")
+        if(decision == '1'):
+            print("Spanish has been set as the default language")
+        else:
+            print("English has been set as the default language")
+    else:
+        print("Invalid Option! Please try again")
+        GuestOptions()
+
+
+def policies():
+    print("Welcome to the policies section!")
+    print("Here are the options.")
+    print("1. A Copyright Notice, 2. About, 3. Accessibility, 4. User Agreement, 5.Privacy Policy, 6. Cookie Policy, 7. Copyright policy, 8. Brand policy")
+    choice = input("Please enter your choice:")
+    while choice != '1' and choice != '2' and choice != '3' and choice != '4' and choice != '5'\
+            and choice != '6' and choice != '7' and choice != '8':
+        print("Enter 1 - 8 to make a selection")
+        decision = input("Please enter your choice")
+
+    if(choice == '1'):
+        print("Copyright Notice!")
+        print("The software for this tool is open-source. This means that anyone can view the code and submit their changes to it.") 
+    elif(choice == '2'):
+        print("About")
+        about()
+    elif(choice == '3'):
+        print("Accessibility")
+        print("We ensure to make our tool accessible to everyone. Please reach out to us if there is any issue")
+    elif(choice == '4'):
+        print("User Agreement")
+        print("This is a legal agreement between you(the licensee) and the licensor. There will be no fee assessed by the licensor for the product. This policy will be updated regularly.")
+    elif(choice == '5'):
+        print("Privacy Policy")
+        print("We strive to make sure your data is handled correctly and in a confidential manner. Please reach out to us if there has been any issues with it.")
+        decision = input("We also have an additional option for guest controls. Type 1 to open it:")
+        if(input == '1'):
+            GuestControls()
+        else:
+            print("Invalid Choice! Please try again")
+            policies()
+    elif(choice == '6'):
+        print("Cookie Policy")
+        print("We only store essential cookies to make sure the user is authentic. This is also done to prevent any security vulnerabilites.")
+    elif(choice == '7'):
+        print("Copyright Policy")
+        print("We have a copyright policy to make sure our product is not used in the wrong manner.")
+    elif(choice == '8'):
+        print("Brand Policy")
+        print("We aim to make sure that each and every process in our software is consistent. This policy is subject to further change")
+    else:
+        print("Invalid Choice! Please try again")
+        policies()
+        
 if __name__ == "__main__":
     main()
