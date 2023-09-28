@@ -25,11 +25,12 @@ def main():
     print('2. Register new account')
     print('3. Play video')
     print('4. Search by name')
-    print('5. Exit')
+    print('5. Useful Links')
+    print('6. Exit')
 
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3' and decision != '4':
-        if decision == '5':
+    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5':
+        if decision == '6':
             break
         print('Please enter 1, 2, 3, 4, or 5')
         decision = input("")
@@ -50,6 +51,10 @@ def main():
         f_name = input("First: ")
         l_name = input("Last: ")
         search_by_name(f_name, l_name)
+    elif decision == '5':
+        logged_in = False
+        useful_links(logged_in, conn)
+
 
 
 def search_by_name(f_name, l_name):
@@ -112,12 +117,13 @@ def logged_in():
     print('1. Job Search')
     print('2. User Search')
     print('3. Learn Skill')
-    print('4. Logout')
+    print('4. Useful Links')
+    print('5. Logout')
 
     # Get user input
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3' and decision != '4':
-        print('Please enter 1, 2, 3, or 4')
+    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5':
+        print('Please enter 1, 2, 3, 4, or 5')
         decision = input("")
 
     # Route input to proper function
@@ -127,6 +133,12 @@ def logged_in():
         find_user()
     elif decision == '3':
         learn_skill()
+    elif decision == '4':
+        logged_in = True
+        conn = sqlite3.connect('user_database.db')
+        useful_links(logged_in, conn)
+    elif decision == '5':
+        return
     else:
         # Empty global vars upon logout
         global LOGGED_IN_FIRST, LOGGED_IN_LAST
@@ -322,6 +334,62 @@ def num_jobs():
     conn.close()
     return result[0]
 
+def about():
+    print("In College: Welcome to In College, the world's largest college student network "
+        "with many users in many countries and territories worldwide. This is some information "
+        "about the history and purpose of the company.")
+
+def useful_links(logged_in, conn):
+    print("Useful Links:")
+    print("1. General")
+    print("2. Browse InCollege")
+    print("3. Business Solutions")
+    print("4. Directories")
+
+    choice = input("Enter the number of your choice: ")
+
+    if choice == "1":
+        general_links(logged_in, conn)
+    elif choice == "2":
+        print("Under construction")
+    elif choice == "3":
+        print("Under construction")
+    elif choice == "4":
+        print("Under construction")
+    else:
+        print("Invalid choice. Please select a valid option.")
+        useful_links(logged_in, conn)
+
+def general_links(logged_in, conn):
+    print("General Links:")
+    if not logged_in:
+        print("1. Sign Up")
+    print("2. Help Center")
+    print("3. About")
+    print("4. Press")
+    print("5. Blog")
+    print("6. Careers")
+    print("7. Developers")
+    print("8. Go Back")
+
+    choice = input("Enter the number of your choice: ")
+
+    if choice == "1" and not logged_in:
+        conn = sqlite3.connect('user_database.db')
+        register(conn)
+    elif choice == "2":
+        print("We're here to help.")
+    elif choice == "3":
+        about()
+    elif choice == "4":
+        print("In College Pressroom: Stay on top of the latest news, updates, and reports.")
+    elif choice == "5" or choice == "6" or choice == "7":
+        print("Under construction")
+    elif choice == "8":
+        useful_links(logged_in, conn)
+    else:
+        print("Invalid choice. Please select a valid option.")
+        general_links(logged_in, conn)
 
 if __name__ == "__main__":
     main()
