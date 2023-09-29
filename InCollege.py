@@ -395,6 +395,14 @@ def general_links(logged_in, conn):
         general_links(logged_in, conn)
         
 def GuestControls():
+    conn = sqlite3.connect("settings.db")
+    db = conn.cursor()
+    db.execute('''CREATE TABLE IF NOT EXISTS settings (Email TEXT PRIMARY KEY,SMS TEXT,Advertising TEXT,
+    Language TEXT)''')
+    initial = [('On', 'On', 'On', 'English')]
+    db.executemany('INSERT INTO settings (Email, SMS, Advertising, Language) VALUES (?, ?)', initial)
+    conn.commit()
+    
     print("This is the Guest Controls Section")
     print("All the guest options are turned on when you create an account, but you can turn them off here")
     print("Here are the options")
@@ -406,6 +414,9 @@ def GuestControls():
     if(choice == '1'):
         decision = input("Would you like to turn off our updates to your InCollege email? Type 1 for yes or 2 for no")
         if(decision == '1'):
+            change = [('Off')]
+            db.executemany('INSERT INTO settings (Email) VALUES (?)', change)
+            conn.commit()
             print("Updates to your InCollege Email have been turned off")
         else:
             print("Updates to your InCollege Email are on")
@@ -413,6 +424,9 @@ def GuestControls():
     elif(choice == '2'):
         decision = input("Would you like to turn off our updates to your SMS? Type 1 for yes or 2 for no")
         if(decision == '1'):
+            change = [('Off')]
+            db.executemany('INSERT INTO settings (SMS) VALUES (?)', change)
+            conn.commit()
             print("Updates to your SMS have been turned off")
         else:
             print("Updates to your SMS are on")
@@ -420,6 +434,9 @@ def GuestControls():
     elif(choice == '3'):
         decision = input("Would you like to turn off Advertising Features? Type 1 for yes or 2 for no")
         if(decision == '1'):
+            change = [('Off')]
+            db.executemany('INSERT INTO settings (Advertising) VALUES (?)', change)
+            conn.commit()
             print("Advertising Features have been turned off")
         else:
             print("Advertising Features are on")
@@ -427,13 +444,16 @@ def GuestControls():
     elif(choice == '4'):
         decision = input("Would you like to change the language to Spanish? Type 1 for yes or 2 for no")
         if(decision == '1'):
+            change = [('Spanish')]
+            db.executemany('INSERT INTO settings (Language) VALUES (?)', change)
+            conn.commit()
             print("Spanish has been set as the default language")
         else:
             print("English has been set as the default language")
     else:
         print("Invalid Option! Please try again")
         GuestOptions()
-
+    conn.close()
 
 def policies():
     print("Welcome to the policies section!")
