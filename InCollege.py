@@ -10,8 +10,16 @@ def main():
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
     # Create database if it doesn't already exist
-    db.execute('''CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT,
-    first_name TEXT, last_name TEXT)''')
+    db.execute('''CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY,
+    password TEXT,
+    first_name TEXT,
+    last_name TEXT,
+    email BOOLEAN,
+    sms BOOLEAN,
+    advertising BOOLEAN,
+    language TEXT
+    )''')
     # Close connection
     conn.close()
     print('=========================================================================')
@@ -26,13 +34,15 @@ def main():
     print('3. Play video')
     print('4. Search by name')
     print('5. Useful Links')
-    print('6. Exit')
+    print('6. InCollege Important Links')
+    print('7. Exit')
 
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5':
-        if decision == '6':
+    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5'\
+            and decision != '6':
+        if decision == '7':
             break
-        print('Please enter 1, 2, 3, 4, or 5')
+        print('Please enter 1-7')
         decision = input("")
 
     if decision == '1':
@@ -54,7 +64,8 @@ def main():
     elif decision == '5':
         logged_in = False
         useful_links(logged_in, conn)
-
+    elif decision == '6':
+        policies()
 
 
 def search_by_name(f_name, l_name):
@@ -118,12 +129,14 @@ def logged_in():
     print('2. User Search')
     print('3. Learn Skill')
     print('4. Useful Links')
-    print('5. Logout')
+    print('5. InCollege Important Links')
+    print('6. Logout')
 
     # Get user input
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5':
-        print('Please enter 1, 2, 3, 4, or 5')
+    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5'\
+            and decision != '6':
+        print('Please enter 1 - 6')
         decision = input("")
 
     # Route input to proper function
@@ -138,12 +151,12 @@ def logged_in():
         conn = sqlite3.connect('user_database.db')
         useful_links(logged_in, conn)
     elif decision == '5':
-        return
-    else:
+        policies()
+    elif decision == '6':
         # Empty global vars upon logout
         global LOGGED_IN_FIRST, LOGGED_IN_LAST
         LOGGED_IN_FIRST, LOGGED_IN_LAST = "", ""
-        main()
+        return
 
 
 def job_search():
@@ -241,7 +254,6 @@ def learn_skill():
     decision = input("")
     while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5'\
             and decision != '6':
-        print("Enter 1 - 6 to make a selection")
         decision = input("")
 
     if decision == '1':
@@ -296,8 +308,9 @@ def register(conn):
 
     # Insert account into database
     db = conn.cursor()
-    db.execute("INSERT INTO users (username, password, first_name, last_name) VALUES (?, ?, ?, ?)",
-               (username, password, f_name, l_name))
+    db.execute("INSERT INTO users (username, password, first_name, last_name, email, sms, advertising, language)"
+               "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+               (username, password, f_name, l_name, True, True, True, 'English'))
 
     conn.commit()
     conn.close()
@@ -334,10 +347,12 @@ def num_jobs():
     conn.close()
     return result[0]
 
+
 def about():
     print("In College: Welcome to In College, the world's largest college student network "
-        "with many users in many countries and territories worldwide. This is some information "
-        "about the history and purpose of the company.")
+          "with many users in many countries and territories worldwide. This is some information "
+          "about the history and purpose of the company.")
+
 
 def useful_links(logged_in, conn):
     print("Useful Links:")
@@ -345,8 +360,11 @@ def useful_links(logged_in, conn):
     print("2. Browse InCollege")
     print("3. Business Solutions")
     print("4. Directories")
+    print('5. Go back')
 
-    choice = input("Enter the number of your choice: ")
+    choice = input("")
+    while choice != '1' and choice != '2' and choice != '3' and choice != '4' and choice != '5':
+        choice = input("")
 
     if choice == "1":
         general_links(logged_in, conn)
@@ -356,9 +374,9 @@ def useful_links(logged_in, conn):
         print("Under construction")
     elif choice == "4":
         print("Under construction")
-    else:
-        print("Invalid choice. Please select a valid option.")
-        useful_links(logged_in, conn)
+    elif choice == '5':
+        main()
+
 
 def general_links(logged_in, conn):
     print("General Links:")
@@ -372,7 +390,11 @@ def general_links(logged_in, conn):
     print("7. Developers")
     print("8. Go Back")
 
-    choice = input("Enter the number of your choice: ")
+    choice = input("")
+
+    while choice != '1' and choice != '2' and choice != '3' and choice != '4' and choice != '5'\
+            and choice != '6' and choice != '7' and choice != '8':
+        choice = input("")
 
     if choice == "1" and not logged_in:
         conn = sqlite3.connect('user_database.db')
@@ -387,9 +409,266 @@ def general_links(logged_in, conn):
         print("Under construction")
     elif choice == "8":
         useful_links(logged_in, conn)
-    else:
-        print("Invalid choice. Please select a valid option.")
-        general_links(logged_in, conn)
+
+
+def guest_controls():
+    # If user is not logged in, they will not have any settings
+    if not LOGGED_IN_FIRST:
+        print('You must login to access this page')
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        policies()
+        return
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute("SELECT * FROM users WHERE first_name=? AND last_name=?", (LOGGED_IN_FIRST, LOGGED_IN_LAST))
+    result = db.fetchone()
+    email, sms, advertising, language = result[4], result[5], result[6], result[7]
+    print("Guest Controls")
+
+    print("1. InCollege Email\n"
+          "2. SMS\n"
+          "3. Targeted Advertising\n"
+          "4. Languages\n"
+          "5. Go back")
+    choice = input("")
+    while choice != '1' and choice != '2' and choice != '3' and choice != '4' and choice != '5':
+        print("Please enter 1 - 5")
+        choice = input("")
+
+    # InCollege Email settings
+    if choice == '1':
+        if email:
+            print('Email is turned on')
+            print('1. Turn off')
+            print('2. Go back')
+            decision = input("")
+            while decision != '1' and decision != '2':
+                decision = input("")
+        else:
+            print('Email is turned off')
+            print('1. Turn on')
+            print('2. Go back')
+            decision = input("")
+            while decision != '1' and decision != '2':
+                decision = input("")
+
+        if decision == '1':
+            # Update database
+            if email:
+                db.execute("UPDATE users SET email=? WHERE first_name=? AND last_name=?",
+                           (False, LOGGED_IN_FIRST, LOGGED_IN_LAST))
+                print('Success!')
+            else:
+                db.execute("UPDATE users SET email=? WHERE first_name=? AND last_name=?",
+                           (True, LOGGED_IN_FIRST, LOGGED_IN_LAST))
+                print('Success!')
+        conn.commit()
+        conn.close()
+        guest_controls()
+
+    # SMS settings
+    elif choice == '2':
+        if sms:
+            print('SMS is turned on')
+            print('1. Turn off')
+            print('2. Go back')
+            decision = input("")
+            while decision != '1' and decision != '2':
+                decision = input("")
+        else:
+            print('SMS is turned off')
+            print('1. Turn on')
+            print('2. Go back')
+            decision = input("")
+            while decision != '1' and decision != '2':
+                decision = input("")
+
+        if decision == '1':
+            # Update database
+            if sms:
+                db.execute("UPDATE users SET sms=? WHERE first_name=? AND last_name=?",
+                           (False, LOGGED_IN_FIRST, LOGGED_IN_LAST))
+                print('Success!')
+            else:
+                db.execute("UPDATE users SET sms=? WHERE first_name=? AND last_name=?",
+                           (True, LOGGED_IN_FIRST, LOGGED_IN_LAST))
+                print('Success!')
+        conn.commit()
+        conn.close()
+        guest_controls()
+
+    # Targeted Advertising settings
+    elif choice == '3':
+        if advertising:
+            print('Targeted Advertising is turned on')
+            print('1. Turn off')
+            print('2. Go back')
+            decision = input("")
+            while decision != '1' and decision != '2':
+                decision = input("")
+        else:
+            print('Targeted Advertising is turned off')
+            print('1. Turn on')
+            print('2. Go back')
+            decision = input("")
+            while decision != '1' and decision != '2':
+                decision = input("")
+
+        if decision == '1':
+            # Update database
+            if advertising:
+                db.execute("UPDATE users SET advertising=? WHERE first_name=? AND last_name=?",
+                           (False, LOGGED_IN_FIRST, LOGGED_IN_LAST))
+                print('Success!')
+            else:
+                db.execute("UPDATE users SET advertising=? WHERE first_name=? AND last_name=?",
+                           (True, LOGGED_IN_FIRST, LOGGED_IN_LAST))
+                print('Success!')
+        conn.commit()
+        conn.close()
+        guest_controls()
+
+    # Language settings
+    elif choice == '4':
+        if language == 'English':
+            print('Language is set to English')
+            print('1. Switch to Spanish')
+            print('2. Go back')
+            decision = input("")
+            while decision != '1' and decision != '2':
+                decision = input("")
+        else:
+            print('Language is set to Spanish')
+            print('1. Switch to English')
+            print('2. Go back')
+            decision = input("")
+            while decision != '1' and decision != '2':
+                decision = input("")
+
+        if decision == '1':
+            # Update database
+            if language == 'English':
+                db.execute("UPDATE users SET language=? WHERE first_name=? AND last_name=?",
+                           ('Spanish', LOGGED_IN_FIRST, LOGGED_IN_LAST))
+                print('Success!')
+            else:
+                db.execute("UPDATE users SET language=? WHERE first_name=? AND last_name=?",
+                           ('English', LOGGED_IN_FIRST, LOGGED_IN_LAST))
+                print('Success!')
+        conn.commit()
+        conn.close()
+        guest_controls()
+
+    elif choice == '5':
+        policies()
+
+
+def policies():
+    print("Welcome to the policies section!")
+    print("1. A Copyright Notice\n"
+          "2. About\n"
+          "3. Accessibility\n"
+          "4. User Agreement\n"
+          "5. Privacy Policy\n"
+          "6. Cookie Policy\n"
+          "7. Copyright policy\n"
+          "8. Brand policy\n"
+          "9. Go back")
+    choice = input("")
+    while choice != '1' and choice != '2' and choice != '3' and choice != '4' and choice != '5'\
+            and choice != '6' and choice != '7' and choice != '8' and choice != '9':
+        choice = input("")
+
+    if choice == '1':
+        print("Copyright Notice")
+        print("The software for this tool is open-source."
+              " This means that anyone can view the code and submit their changes to it.")
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        policies()
+
+    elif choice == '2':
+        print("About")
+        about()
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        policies()
+
+    elif choice == '3':
+        print("Accessibility")
+        print("We ensure to make our tool accessible to everyone. Please reach out to us if there is any issue")
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        policies()
+
+    elif choice == '4':
+        print("User Agreement")
+        print("This is a legal agreement between you(the licensee) and the licensor. There will be no fee assessed by"
+              " the licensor for the product. This policy will be updated regularly.")
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        policies()
+
+    elif choice == '5':
+        print("Privacy Policy")
+        print("We strive to make sure your data is handled correctly and in a confidential manner."
+              " Please reach out to us if there has been any issues with it.")
+        print("1. Guest Controls")
+        print("2. Go back")
+        decision = input("")
+        while decision != '1' and decision != '2':
+            decision = input("")
+        if decision == '1':
+            guest_controls()
+        else:
+            policies()
+
+    elif choice == '6':
+        print("Cookie Policy")
+        print("We only store essential cookies to make sure the user is authentic."
+              " This is also done to prevent any security vulnerabilites.")
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        policies()
+
+    elif choice == '7':
+        print("Copyright Policy")
+        print("We have a copyright policy to make sure our product is not used in the wrong manner.")
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        policies()
+
+    elif choice == '8':
+        print("Brand Policy")
+        print("We aim to make sure that each and every process in our software is consistent."
+              " This policy is subject to further change")
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        policies()
+
+    elif choice == '9':
+        if not LOGGED_IN_FIRST:
+            main()
+        else:
+            logged_in()
+
 
 if __name__ == "__main__":
     main()
