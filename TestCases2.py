@@ -1,4 +1,4 @@
-# Epic 1 Tests
+# Epic 2 Tests
 import InCollege
 import pytest
 import sqlite3
