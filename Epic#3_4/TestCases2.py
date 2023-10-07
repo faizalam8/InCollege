@@ -2,6 +2,7 @@
 import InCollege
 import pytest
 import sqlite3
+from unittest.mock import ANY
 from unittest.mock import patch, Mock, MagicMock
 
 
@@ -42,7 +43,7 @@ def test_initial_page_print(conn):
 # Check the new enhanced registration 
 def test_prompt_for_first_and_last_name():
     # Mocking user input
-    user_inputs = ['Johnny', 'Depp', 'johndoe', 'Password123!']
+    user_inputs = ['Johnny', 'Depp', 'uni', 'major', 'johndoe', 'Password123!']
     
     with patch('builtins.input', side_effect=user_inputs) as mock_input, \
          patch('InCollege.username_exists', return_value=False), \
@@ -55,15 +56,15 @@ def test_prompt_for_first_and_last_name():
         InCollege.register(mock_conn)
         
         # Check if user was prompted for first and last name
-        assert mock_input.call_count == 4  # 4 because we're simulating 4 inputs
+        assert mock_input.call_count == 6  # 4 because we're simulating 4 inputs
         assert mock_input.call_args_list[0][0][0] == 'First name: '
         assert mock_input.call_args_list[1][0][0] == 'Last name: '
         
         # Check if the right details were inserted to the database
         mock_cursor.execute.assert_called_once_with(
-            "INSERT INTO users (username, password, first_name, last_name, email, sms, advertising, language)"
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            ('johndoe', 'Password123!', 'Johnny', 'Depp', True, True, True, 'English')
+            "INSERT INTO users (username, password, first_name, last_name, university, major, email, sms, advertising, language)"
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ('johndoe', 'Password123!', 'Johnny', 'Depp', ANY, ANY, True, True, True, 'English')
         )
 
 # Test the insertion of a new job

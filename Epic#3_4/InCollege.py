@@ -18,8 +18,20 @@ def main():
     email BOOLEAN,
     sms BOOLEAN,
     advertising BOOLEAN,
-    language TEXT
+    language TEXT,
+    university TEXT,
+    major TEXT           
     )''')
+    # Create a friends table is it doesn't already exist
+    db.execute('''CREATE TABLE IF NOT EXISTS friends (
+    user1 TEXT,
+    user2 TEXT,
+    status TEXT,
+    PRIMARY KEY(user1, user2),
+    FOREIGN KEY(user1) REFERENCES users(username),
+    FOREIGN KEY(user2) REFERENCES users(username)
+)''')
+    
     # Close connection
     conn.close()
     print('=========================================================================')
@@ -220,24 +232,66 @@ def post_job():
 
 
 def find_user():
-    # Search for user by username
-    username_input = input("Username: ")
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
-    db.execute("SELECT 1 FROM users WHERE username=?", (username_input,))
-    output = db.fetchone()
+
+    print("Search by:")
+    print("1. First Name")
+    print("2. Last Name")
+    print("3. Both First and Last Name")
+    print("4. University Name")
+    print("5. Major")
+    print("6. Exit")
+
+    choice = input("Enter your choice: ")
+
+    if choice == "1":
+        search_term = input("Enter First Name: ")
+        db.execute("SELECT * FROM users WHERE first_name LIKE ?", ('%' + search_term + '%',))
+
+    elif choice == "2":
+        search_term = input("Enter Last Name: ")
+        db.execute("SELECT * FROM users WHERE last_name LIKE ?", ('%' + search_term + '%',))
+
+    elif choice == "3":
+        f_name = input("Enter First Name: ")
+        l_name = input("Enter Last Name: ")
+        db.execute("SELECT * FROM users WHERE first_name LIKE ? AND last_name LIKE ?", ('%' + f_name + '%', '%' + l_name + '%',))
+
+    elif choice == "4":
+        search_term = input("Enter University Name: ")
+        db.execute("SELECT * FROM users WHERE university LIKE ?", ('%' + search_term + '%',))
+
+    elif choice == "5":
+        search_term = input("Enter Major: ")
+        db.execute("SELECT * FROM users WHERE major LIKE ?", ('%' + search_term + '%',))
+
+    elif choice == "6":
+        return
+
+    else:
+        print("Invalid choice. Try again.")
+        find_user()
+        return
+
+    users = db.fetchall()
     conn.close()
 
-    if output:
-        print('User found!')
-    else:
-        print('User not found')
-
-    print('1. Go back')
-    decision = input("")
-    while decision != "1":
+    if not users:
+        print('No match found in the InCollege system.')
+        print('1. Go Back')
         decision = input("")
-    logged_in()
+        while decision != '1':
+            decision = input('')
+        main()
+    else:
+        for user in users:
+            print(f"Name: {user[2]} {user[3]}, University: {user[8]}, Major: {user[9]}")
+        print('1. Go Back')
+        decision = input("")
+        while decision != '1':
+            decision = input('')
+        logged_in()
 
 
 def learn_skill():
@@ -277,9 +331,9 @@ def learn_skill():
 
 
 def register(conn):
-    # Ensure there are less than 5 registered users
+    # There can be at most 10 student accounts
     num_users = num_registered_users()
-    if num_users >= 5:
+    if num_users >= 10:
         print("All permitted accounts have been created, please come back later")
         return
     print('==================')
@@ -289,6 +343,8 @@ def register(conn):
     # Retrieve names
     f_name = input('First name: ')
     l_name = input('Last name: ')
+    uni = input('University name: ')
+    major = input('Major: ')
     username = input('Enter username: ')
 
     # Check if username exists
@@ -308,9 +364,9 @@ def register(conn):
 
     # Insert account into database
     db = conn.cursor()
-    db.execute("INSERT INTO users (username, password, first_name, last_name, email, sms, advertising, language)"
-               "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-               (username, password, f_name, l_name, True, True, True, 'English'))
+    db.execute("INSERT INTO users (username, password, first_name, last_name, university, major, email, sms, advertising, language)"
+               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+               (username, password, f_name, l_name, uni, major, True, True, True, 'English'))
 
     conn.commit()
     conn.close()
@@ -667,7 +723,7 @@ def policies():
         if not LOGGED_IN_FIRST:
             main()
         else:
-            logged_in()
+            logged_in()  
 
 
 if __name__ == "__main__":
