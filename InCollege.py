@@ -20,6 +20,15 @@ def main():
     advertising BOOLEAN,
     language TEXT
     )''')
+
+    # Create the "connections" table
+    db.execute('''CREATE TABLE IF NOT EXISTS connections (
+        user TEXT,
+        username TEXT,
+        FOREIGN KEY (user) REFERENCES users (username),
+        FOREIGN KEY (username) REFERENCES users (username)
+    )''')
+
     # Close connection
     conn.close()
     print('=========================================================================')
@@ -121,6 +130,8 @@ def login():
 
 
 def logged_in():
+    global LOGGED_IN_FIRST, LOGGED_IN_LAST
+
     # Display page once logged in
     print('==========')
     print('Home Page')
@@ -130,13 +141,14 @@ def logged_in():
     print('3. Learn Skill')
     print('4. Useful Links')
     print('5. InCollege Important Links')
-    print('6. Logout')
+    print('6. View and Disconnect from Connections')
+    print('7. Logout')
 
     # Get user input
     decision = input("")
     while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5'\
-            and decision != '6':
-        print('Please enter 1 - 6')
+            and decision != '6' and decision != '7':
+        print('Please enter 1 - 7')
         decision = input("")
 
     # Route input to proper function
@@ -153,8 +165,9 @@ def logged_in():
     elif decision == '5':
         policies()
     elif decision == '6':
+        view_and_disconnect_connections(LOGGED_IN_FIRST, LOGGED_IN_LAST)
+    elif decision == '7':
         # Empty global vars upon logout
-        global LOGGED_IN_FIRST, LOGGED_IN_LAST
         LOGGED_IN_FIRST, LOGGED_IN_LAST = "", ""
         return
 
@@ -669,6 +682,167 @@ def policies():
         else:
             logged_in()
 
+def add_connection(logged_in_first, logged_in_last):
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+
+    # Retrieve a list of available users to choose from
+    db.execute("SELECT username FROM users WHERE username != ?",
+               (f"{logged_in_first} {logged_in_last}",))
+    available_users = db.fetchall()
+
+    conn.close()
+
+    if not available_users:
+        print("There are no available users to add as connections.")
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        logged_in()
+        return
+
+    print("Available Users:")
+    for i, user in enumerate(available_users, start=1):
+        print(f"{i}. {user[0]}")
+
+    print(f"{len(available_users) + 1}. Go back")
+
+    decision = input("Enter the number of the user you want to add as a connection: ")
+    while not decision.isdigit() or int(decision) < 1 or int(decision) > len(available_users) + 1:
+        decision = input("Please enter a valid option: ")
+
+    if int(decision) == len(available_users) + 1:
+        logged_in()
+        return
+
+    selected_user = available_users[int(decision) - 1][0]
+
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+
+    # Check if the connection already exists
+    db.execute("SELECT 1 FROM connections WHERE user=? AND username=?", (f"{logged_in_first} {logged_in_last}", selected_user))
+    existing_connection = db.fetchone()
+
+    if existing_connection:
+        conn.close()
+        print(f"{selected_user} is already in your connections.")
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        logged_in()
+        return
+
+    # Add the connection
+    db.execute("INSERT INTO connections (user, username) VALUES (?, ?)",
+               (f"{logged_in_first} {logged_in_last}", selected_user))
+    conn.commit()
+    conn.close()
+
+    print(f"{selected_user} has been added to your connections.")
+    print('1. Go back')
+    decision = input("")
+    while decision != '1':
+        decision = input("")
+    logged_in()
+
+def disconnect_from_connection(logged_in_first, logged_in_last):
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+
+    # Retrieve connections for the logged-in user
+    db.execute("SELECT username FROM connections WHERE user=? AND username IN (SELECT username FROM users)",
+               (f"{logged_in_first} {logged_in_last}",))
+    connections = db.fetchall()
+
+    conn.close()
+
+    if not connections:
+        print("You have no connections to disconnect from.")
+        print('1. Go back')
+        decision = input("")
+        while decision != '1':
+            decision = input("")
+        logged_in()
+        return
+
+    print("Select a connection to disconnect from:")
+    for i, connection in enumerate(connections, start=1):
+        print(f"{i}. {connection[0]}")
+
+    print(f"{len(connections) + 1}. Go back")
+
+    decision = input("")
+    while not (decision.isdigit() and 1 <= int(decision) <= len(connections) + 1):
+        decision = input("Invalid input. Please enter a valid option: ")
+
+    if int(decision) == len(connections) + 1:
+        logged_in()
+    else:
+        # Disconnect the selected connection
+        selected_connection = connections[int(decision) - 1][0]
+        confirm = input(f"Are you sure you want to disconnect from {selected_connection}? (yes/no): ").strip().lower()
+
+        if confirm == 'yes':
+            conn = sqlite3.connect('user_database.db')
+            db = conn.cursor()
+
+            # Delete the connection
+            db.execute("DELETE FROM connections WHERE user=? AND username=?",
+                       (f"{logged_in_first} {logged_in_last}", selected_connection))
+            conn.commit()
+            conn.close()
+
+            print(f"You have successfully disconnected from {selected_connection}.")
+            print('1. Go back')
+            decision = input("")
+            while decision != '1':
+                decision = input("")
+            logged_in()
+        else:
+            disconnect_from_connection(logged_in_first, logged_in_last)
+
+def view_and_disconnect_connections(logged_in_first, logged_in_last):
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+
+    # Retrieve connections for the logged-in user
+    db.execute("SELECT username FROM connections WHERE user=? AND username IN (SELECT username FROM users)",
+               (f"{logged_in_first} {logged_in_last}",))
+    connections = db.fetchall()
+
+    conn.close()
+
+    if not connections:
+        print("You have no connections.")
+        print('1. Add a connection')  # Option to add a connection
+        print('2. Go back')
+        decision = input("")
+        while decision != '1' and decision != '2':
+            decision = input("")
+        if decision == '1':
+            add_connection(logged_in_first, logged_in_last)  # Call the function to add a connection
+        elif decision == '2':
+            logged_in()
+        return
+
+    print("Your Connections:")
+    for i, connection in enumerate(connections, start=1):
+        print(f"{i}. {connection[0]}")
+
+    print(f"{len(connections) + 1}. Add a connection")
+    print(f"{len(connections) + 2}. Go back")
+
+    decision = input("")
+    while decision != str(len(connections) + 1) and decision != str(len(connections) + 2):
+        decision = input("")
+
+    if decision == str(len(connections) + 1):
+        add_connection(logged_in_first, logged_in_last)  # Call the function to add a connection
+    elif decision == str(len(connections) + 2):
+        logged_in()
 
 if __name__ == "__main__":
     main()
