@@ -805,13 +805,14 @@ def add_connection(logged_in_first, logged_in_last):
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
 
-    # Check if the connection already exists
-    db.execute("SELECT 1 FROM connections WHERE user=? AND username=?", (f"{logged_in_first} {logged_in_last}", selected_user))
-    existing_connection = db.fetchone()
+    # Check if a friend request has already been sent to the selected user
+    db.execute("SELECT 1 FROM friend_requests WHERE from_user=? AND to_user=? AND status=0",
+               (f"{logged_in_first} {logged_in_last}", selected_user))
+    existing_request = db.fetchone()
 
-    if existing_connection:
+    if existing_request:
         conn.close()
-        print(f"{selected_user} is already in your connections.")
+        print(f"A friend request has already been sent to {selected_user}.")
         print('1. Go back')
         decision = input("")
         while decision != '1':
@@ -893,7 +894,8 @@ def accept_friend_request(logged_in_first, logged_in_last, from_user):
     db = conn.cursor()
 
     # Remove the friend request entry
-    db.execute("DELETE FROM friend_requests WHERE to_user=? AND from_user=?", (f"{logged_in_first} {logged_in_last}", from_user))
+    db.execute("DELETE FROM friend_requests WHERE to_user=? AND from_user=? AND status=0",
+               (f"{logged_in_first} {logged_in_last}", from_user))
 
     # Add both users as connections
     db.execute("INSERT INTO connections (user, username) VALUES (?, ?)", (f"{logged_in_first} {logged_in_last}", from_user))
@@ -906,14 +908,15 @@ def view_and_accept_friend_requests(logged_in_first, logged_in_last):
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
 
-    # Retrieve pending friend requests
-    db.execute("SELECT from_user FROM friend_requests WHERE to_user=?", (f"{logged_in_first} {logged_in_last}",))
+    # Retrieve pending friend requests for the logged-in user using their first and last names
+    db.execute("SELECT from_user FROM friend_requests WHERE to_user=? AND status=0",
+               (f"{logged_in_first} {logged_in_last}",))
     pending_requests = db.fetchall()
 
     conn.close()
 
     if not pending_requests:
-        print("You have no pending friend requests.")
+        print(f"You, {logged_in_first} {logged_in_last}, have no pending friend requests.")
         input("Press Enter to go back.")
     else:
         print("Pending Friend Requests:")
@@ -929,6 +932,9 @@ def view_and_accept_friend_requests(logged_in_first, logged_in_last):
             choice = int(choice)
             if 1 <= choice <= len(pending_requests):
                 from_user = pending_requests[choice - 1][0]
+                # Mark the friend request as accepted by updating its status
+                db.execute("UPDATE friend_requests SET status=1 WHERE from_user=? AND to_user=?",
+                           (from_user, f"{logged_in_first} {logged_in_last}"))
                 accept_friend_request(logged_in_first, logged_in_last, from_user)
                 print(f"You are now friends with {from_user}!")
             else:
@@ -968,7 +974,7 @@ def view_and_disconnect_connections(logged_in_first, logged_in_last):
     else:
         print(f"{len(connections) + 1}. Add a connection")
         print(f"{len(connections) + 2}. Delete a connection")
-        print(f"{len(connections) + 3}. View and Accept Friend Requests")  # New option
+        print(f"{len(connections) + 3}. View and Accept Friend Requests")
         print(f"{len(connections) + 4}. Go back")
 
     decision = input("")
