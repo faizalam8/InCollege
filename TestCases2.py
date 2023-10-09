@@ -2,6 +2,7 @@
 import InCollege
 import pytest
 import sqlite3
+from unittest.mock import ANY
 from unittest.mock import patch, Mock, MagicMock
 
 
@@ -12,7 +13,7 @@ def conn():
 
 # Test that the initial screen pops up
 def test_initial_page_print(conn):
-    with patch('InCollege.input', return_value='5'):
+    with patch('InCollege.input', return_value='7'):
         # Mock database connection 
         with patch('InCollege.sqlite3.connect', return_value=MagicMock()):
             with patch('builtins.print') as mock_print:
@@ -31,7 +32,9 @@ def test_initial_page_print(conn):
                     '2. Register new account',
                     '3. Play video',
                     '4. Search by name',
-                    '5. Exit'
+                    '5. Useful Links',
+                    '6. InCollege Important Links',
+                    '7. Exit'
                 ]
                 
                 for line in lines:
@@ -40,7 +43,7 @@ def test_initial_page_print(conn):
 # Check the new enhanced registration 
 def test_prompt_for_first_and_last_name():
     # Mocking user input
-    user_inputs = ['Johnny', 'Depp', 'johndoe', 'Password123!']
+    user_inputs = ['Johnny', 'Depp', 'uni', 'major', 'johndoe', 'Password123!']
     
     with patch('builtins.input', side_effect=user_inputs) as mock_input, \
          patch('InCollege.username_exists', return_value=False), \
@@ -53,14 +56,15 @@ def test_prompt_for_first_and_last_name():
         InCollege.register(mock_conn)
         
         # Check if user was prompted for first and last name
-        assert mock_input.call_count == 4  # 4 because we're simulating 4 inputs
+        assert mock_input.call_count == 6  # 4 because we're simulating 4 inputs
         assert mock_input.call_args_list[0][0][0] == 'First name: '
         assert mock_input.call_args_list[1][0][0] == 'Last name: '
         
         # Check if the right details were inserted to the database
         mock_cursor.execute.assert_called_once_with(
-            "INSERT INTO users (username, password, first_name, last_name) VALUES (?, ?, ?, ?)",
-            ('johndoe', 'Password123!', 'Johnny', 'Depp')
+            "INSERT INTO users (username, password, first_name, last_name, university, major, email, sms, advertising, language)"
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ('johndoe', 'Password123!', 'Johnny', 'Depp', ANY, ANY, True, True, True, 'English')
         )
 
 # Test the insertion of a new job
@@ -84,9 +88,3 @@ def test_insert_new_job(conn, capsys):
             # Check if the job was inserted with the right details
             out, err = capsys.readouterr()
             assert out == "Success! Your job has been posted\n"
-
-  
-
-
-
-
