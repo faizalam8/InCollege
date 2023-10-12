@@ -135,6 +135,14 @@ def login():
         LOGGED_IN_FIRST = output[2]
         LOGGED_IN_LAST = output[3]
         print('You have successfully logged in')
+
+        # Display any pending friend requests
+        #conn = sqlite3.connect('users_database.db')
+        #db = conn.cursor()
+        #db.execute("SELECT * FROM friend_requests WHERE to_user=?", (username,))
+        #requests = db.fetchall()
+        #conn.close()
+        #print(requests)
         logged_in()
     else:
         print('Incorrect username / password, please try again')
@@ -153,7 +161,7 @@ def logged_in():
     print('3. Learn Skill')
     print('4. Useful Links')
     print('5. InCollege Important Links')
-    print('6. View and Disconnect from Connections')
+    print('6. View and Manage Connections')
     print('7. Logout')
 
     # Get user input
@@ -335,6 +343,7 @@ def learn_skill():
         print("Under construction")
     else:
         logged_in()
+        return
 
     print('1. Go back')
     decision = input("")
@@ -346,7 +355,7 @@ def learn_skill():
 def register(conn):
     # Ensure there are less than 5 registered users
     num_users = num_registered_users()
-    if num_users >= 5:
+    if num_users >= 10:
         print("All permitted accounts have been created, please come back later")
         return
     print('==================')
@@ -812,13 +821,18 @@ def policies():
     except sqlite3.Error as e:
         print("An error occurred while adding a connection:", str(e))'''
 
+
 def add_connection(logged_in_first, logged_in_last):
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
 
+    # Retrieve username of logged-in user
+    db.execute("SELECT username FROM users WHERE first_name = ? AND last_name = ?", (logged_in_first, logged_in_last))
+    logged_in_username = db.fetchone()[0]
+
     # Retrieve a list of available users to choose from
     db.execute("SELECT username FROM users WHERE username != ?",
-               (f"{logged_in_first} {logged_in_last}",))
+               (logged_in_username,))
     available_users = db.fetchall()
 
     conn.close()
@@ -879,13 +893,14 @@ def add_connection(logged_in_first, logged_in_last):
         decision = input("")
     logged_in()
 
-def disconnect_from_connection(logged_in_first, logged_in_last):
+
+def disconnect_from_connection(logged_in_username):
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
 
     # Retrieve connections for the logged-in user
     db.execute("SELECT username FROM connections WHERE user=? AND username IN (SELECT username FROM users)",
-               (f"{logged_in_first} {logged_in_last}",))
+               (logged_in_username,))
     connections = db.fetchall()
 
     conn.close()
@@ -899,7 +914,7 @@ def disconnect_from_connection(logged_in_first, logged_in_last):
         logged_in()
         return
 
-    print("Select a connection to disconnect from:")
+    print("Select a user to disconnect from:")
     for i, connection in enumerate(connections, start=1):
         print(f"{i}. {connection[0]}")
 
@@ -922,7 +937,9 @@ def disconnect_from_connection(logged_in_first, logged_in_last):
 
             # Delete the connection
             db.execute("DELETE FROM connections WHERE user=? AND username=?",
-                       (f"{logged_in_first} {logged_in_last}", selected_connection))
+                       (logged_in_username, selected_connection))
+            db.execute("DELETE FROM connections WHERE user=? AND username=?",
+                       (selected_connection, logged_in_username))
             conn.commit()
             conn.close()
 
@@ -933,32 +950,42 @@ def disconnect_from_connection(logged_in_first, logged_in_last):
                 decision = input("")
             logged_in()
         else:
-            disconnect_from_connection(logged_in_first, logged_in_last)
+            disconnect_from_connection(logged_in_username)
 
-def accept_friend_request(logged_in_first, logged_in_last, from_user):
+
+def accept_friend_request(new_friend_first, new_friend_last, to_user):
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
 
+    # Retrieve username for new friend
+    db.execute("SELECT username FROM users WHERE first_name = ? AND last_name = ?", (new_friend_first, new_friend_last))
+    new_friend_username = db.fetchone()[0]
+
     # Remove the friend request entry
     db.execute("DELETE FROM friend_requests WHERE to_user=? AND from_user=? AND status=0",
-               (f"{logged_in_first} {logged_in_last}", from_user))
+               (to_user, f"{new_friend_first} {new_friend_last}"))
 
     # Add both users as connections
-    db.execute("INSERT INTO connections (user, username) VALUES (?, ?)", (f"{logged_in_first} {logged_in_last}", from_user))
-    db.execute("INSERT INTO connections (user, username) VALUES (?, ?)", (from_user, f"{logged_in_first} {logged_in_last}"))
+    db.execute("INSERT INTO connections (user, username) VALUES (?, ?)", (new_friend_username, to_user))
+    db.execute("INSERT INTO connections (user, username) VALUES (?, ?)", (to_user, new_friend_username))
 
     conn.commit()
     conn.close()
+
 
 def view_and_accept_friend_requests(logged_in_first, logged_in_last):
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
 
+    # Retrieve logged in username
+    db.execute("SELECT username FROM users WHERE first_name = ? AND last_name = ?", (logged_in_first, logged_in_last))
+    logged_in_username = db.fetchone()
+
     # Retrieve pending friend requests for the logged-in user using their first and last names
     db.execute("SELECT from_user FROM friend_requests WHERE to_user=? AND status=0",
-               (f"{logged_in_first} {logged_in_last}",))
-    pending_requests = db.fetchall()
+               (f"{logged_in_username[0]}",))
 
+    pending_requests = db.fetchall()
     conn.close()
 
     if not pending_requests:
@@ -970,30 +997,36 @@ def view_and_accept_friend_requests(logged_in_first, logged_in_last):
             print(f"{i}. {request[0]}")
 
         choice = input("Enter the number of the request you want to accept (or '0' to go back): ")
-
+        while int(choice) > len(pending_requests):
+            choice = input("")
         if choice == '0':
             return
 
-        try:
-            choice = int(choice)
-            if 1 <= choice <= len(pending_requests):
-                from_user = pending_requests[choice - 1][0]
-                # Mark the friend request as accepted by updating its status
-                db.execute("UPDATE friend_requests SET status=1 WHERE from_user=? AND to_user=?",
-                           (from_user, f"{logged_in_first} {logged_in_last}"))
-                accept_friend_request(logged_in_first, logged_in_last, from_user)
-                print(f"You are now friends with {from_user}!")
-            else:
-                print("Invalid choice. Please enter a valid number.")
-        except ValueError:
-            print("Invalid input. Please enter a number.")
+        actual_choice = int(choice)-1
+
+        # Pull first and last name of new friend
+        new_friend_full = pending_requests[actual_choice][0].split()
+        new_friend_first = new_friend_full[0]
+        new_friend_last = new_friend_full[1]
+
+        conn = sqlite3.connect('user_database.db')
+        db = conn.cursor()
+        db.execute("UPDATE friend_requests SET status=1 WHERE from_user=? AND to_user=?",
+                   (f"{logged_in_first, logged_in_last}", logged_in_username[0]))
+        conn.commit()
+        conn.close()
+        accept_friend_request(new_friend_first, new_friend_last, logged_in_username[0])
+
 
 def view_and_disconnect_connections(logged_in_first, logged_in_last):
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
 
+    # Retrieve logged-in user's username
+    db.execute("SELECT username FROM users WHERE first_name = ? AND last_name = ?", (logged_in_first, logged_in_last))
+    logged_in_username = db.fetchone()[0]
     # Retrieve connections for the logged-in user
-    db.execute("SELECT username FROM connections WHERE user=?", (f"{logged_in_first} {logged_in_last}",))
+    db.execute("SELECT username FROM connections WHERE user=?", (logged_in_username,))
     connections = db.fetchall()
 
     # Check for pending friend requests
@@ -1001,6 +1034,7 @@ def view_and_disconnect_connections(logged_in_first, logged_in_last):
     pending_requests = db.fetchall()
 
     conn.close()
+    else_statement = False
 
     if not connections:
         print("You have no connections.")
@@ -1008,7 +1042,7 @@ def view_and_disconnect_connections(logged_in_first, logged_in_last):
         print("Your Connections:")
         for i, connection in enumerate(connections, start=1):
             print(f"{i}. {connection[0]}")
-
+        print('================')
     if not connections and not pending_requests:
         print('1. Add a connection')
         print('2. View and Accept Friend Requests')
@@ -1022,25 +1056,29 @@ def view_and_disconnect_connections(logged_in_first, logged_in_last):
         print(f"{len(connections) + 2}. Delete a connection")
         print(f"{len(connections) + 3}. View and Accept Friend Requests")
         print(f"{len(connections) + 4}. Go back")
+        else_statement = True
 
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3' and decision != str(len(connections) + 1) and decision != str(len(connections) + 2) and decision != str(len(connections) + 3) and decision != str(len(connections) + 4):
+    while decision != '1' and decision != '2' and decision != '3' and decision != str(len(connections) + 1)\
+            and decision != str(len(connections) + 2) and decision != str(len(connections) + 3)\
+            and decision != str(len(connections) + 4):
         decision = input("")
 
-    if decision == '1':
+    if decision == '1' and not else_statement:
         add_connection(logged_in_first, logged_in_last)
-    elif decision == '2':
+    elif decision == '2' and not else_statement:
         view_and_accept_friend_requests(logged_in_first, logged_in_last)
-    elif decision == '3':
+    elif decision == '3' and not else_statement:
         logged_in()
     elif decision == str(len(connections) + 1):
         add_connection(logged_in_first, logged_in_last)
     elif decision == str(len(connections) + 2):
-        disconnect_from_connection(logged_in_first, logged_in_last)
+        disconnect_from_connection(logged_in_username)
     elif decision == str(len(connections) + 3):
         view_and_accept_friend_requests(logged_in_first, logged_in_last)
     elif decision == str(len(connections) + 4):
         logged_in()
+
 
 if __name__ == "__main__":
     main()
