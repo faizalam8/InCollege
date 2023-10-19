@@ -20,8 +20,34 @@ def main():
     advertising BOOLEAN,
     language TEXT,
     university TEXT,
-    major TEXT           
+    major TEXT,
+    title TEXT,
+    about TEXT,
+    user_id TEXT 
     )''')
+
+    # Table for student experiences 
+    db.execute('''CREATE TABLE IF NOT EXISTS experiences (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT,
+    title TEXT,
+    employer TEXT,
+    date_started TEXT,
+    date_ended TEXT,
+    location TEXT,
+    description TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(username)
+)''')
+
+    # Table for student education
+    db.execute('''CREATE TABLE IF NOT EXISTS educations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT,
+    school_name TEXT,
+    degree TEXT,
+    years_attended TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(username)
+)''')
 
     # Create the connections table
     db.execute('''CREATE TABLE IF NOT EXISTS connections (
@@ -50,6 +76,7 @@ def main():
     print("SUCCESS STORY: I've been using InCollege for only three months and have managed to land "
           "two Software Engineering roles! This site has helped me obtain the necessary skills to "
           "apply, interview, and succeed in the industry.")
+    
     print('1. Login')
     print('2. Register new account')
     print('3. Play video')
@@ -87,7 +114,6 @@ def main():
         useful_links(logged_in, conn)
     elif decision == '6':
         policies()
-
 
 def search_by_name(f_name, l_name):
     # Query for user by name
@@ -159,16 +185,17 @@ def logged_in():
     print('1. Job Search')
     print('2. User Search')
     print('3. Learn Skill')
-    print('4. Useful Links')
-    print('5. InCollege Important Links')
-    print('6. View and Manage Connections')
-    print('7. Logout')
+    print('4. Create Profile')  # Added option for profile creation/update
+    print('5. Useful Links')
+    print('6. InCollege Important Links')
+    print('7. View and Manage Connections')
+    print('8. Logout')
 
     # Get user input
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5'\
-            and decision != '6' and decision != '7':
-        print('Please enter 1 - 7')
+    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5' \
+            and decision != '6' and decision != '7' and decision != '8':
+        print('Please enter 1 - 8')
         decision = input("")
 
     # Route input to proper function
@@ -179,14 +206,16 @@ def logged_in():
     elif decision == '3':
         learn_skill()
     elif decision == '4':
+        create_profile()  
+    elif decision == '5':
         logged_in = True
         conn = sqlite3.connect('user_database.db')
         useful_links(logged_in, conn)
-    elif decision == '5':
-        policies()
     elif decision == '6':
-        view_and_disconnect_connections(LOGGED_IN_FIRST, LOGGED_IN_LAST)
+        policies()
     elif decision == '7':
+        view_and_disconnect_connections(LOGGED_IN_FIRST, LOGGED_IN_LAST)
+    elif decision == '8':
         # Empty global vars upon logout
         LOGGED_IN_FIRST, LOGGED_IN_LAST = "", ""
         return
@@ -392,6 +421,70 @@ def register(conn):
 
     conn.commit()
     conn.close()
+
+def create_profile():
+    global LOGGED_IN_FIRST, LOGGED_IN_LAST
+    if LOGGED_IN_FIRST and LOGGED_IN_LAST:
+        # TO DO: Have a separate option for updating profile?
+        print('Create Your Profile.')
+
+        profile_data = {
+            'title': '',
+            'major': '',
+            'university': '',
+            'about': ''
+        }
+    
+        profile_data['title'] = input('Enter title: ')
+        profile_data['major'] = input('Enter major: ').title()
+        profile_data['university'] = input('Enter university name: ').title()
+        profile_data['about'] = input('Enter about paragraph: ')
+
+        # Construct user_id
+        user_id = f"{LOGGED_IN_FIRST} {LOGGED_IN_LAST}"
+
+        conn = sqlite3.connect('user_database.db')
+        db = conn.cursor()
+        db.execute("UPDATE users SET title=?, major=?, university=?, about=? WHERE user_id=?",
+                   (profile_data['title'], profile_data['major'], profile_data['university'],
+                    profile_data['about'], user_id))
+        conn.commit()
+
+        # User can enter up to 3 experiences
+        for _ in range(3):
+            title = input('Enter experience title (or leave empty to finish): ')
+            if not title:
+                break
+            employer = input('Enter employer: ')
+            date_started = input('Enter date started: ')
+            date_ended = input('Enter date ended: ')
+            location = input('Enter location: ')
+            description = input('Enter description: ')
+
+            db.execute("INSERT INTO experiences (user_id, title, employer, date_started, date_ended, location, description) "
+                       "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                       (user_id, title, employer, date_started, date_ended, location, description))
+            conn.commit()
+
+        while True:
+            school_name = input('Enter school name: ')
+            degree = input('Enter degree: ')
+            years_attended = input('Enter years attended: ')
+
+            db.execute("INSERT INTO educations (user_id, school_name, degree, years_attended) "
+                       "VALUES (?, ?, ?, ?)",
+                       (user_id, school_name, degree, years_attended))
+            conn.commit()
+
+            another_education = input('Do you want to add another education entry? (yes/no): ').lower()
+            if another_education != 'yes':
+                break
+
+        conn.close()
+
+        print('Profile created/updated successfully!')
+    else:
+        print('You must log in before creating/updating your profile.')
 
 
 def username_exists(username):
