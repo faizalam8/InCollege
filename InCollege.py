@@ -415,9 +415,11 @@ def register(conn):
     
     # Insert account into database
     db = conn.cursor()
-    db.execute("INSERT INTO users (username, password, first_name, last_name, university, major, email, sms, advertising, language)"
-               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-               (username, password, f_name, l_name, uni, major, True, True, True, 'English'))
+    db.execute("INSERT INTO users (username, password, first_name, last_name, university, major, email, sms,"
+               "advertising, language, user_id)"
+               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+               (username, password, f_name, l_name, uni, major, True, True, True, 'English',
+                f"{f_name} {l_name}"))
 
     conn.commit()
     conn.close()
@@ -434,7 +436,7 @@ def create_profile():
             'university': '',
             'about': ''
         }
-    
+
         profile_data['title'] = input('Enter title: ')
         profile_data['major'] = input('Enter major: ').title()
         profile_data['university'] = input('Enter university name: ').title()
