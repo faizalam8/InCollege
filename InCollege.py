@@ -3,6 +3,7 @@ import sqlite3
 # Global vars to keep track of logged-in user
 LOGGED_IN_FIRST = ""
 LOGGED_IN_LAST = ""
+LOGGED_IN_USER = ""
 
 
 def main():
@@ -148,6 +149,8 @@ def login():
     # Retrieve login information
     username = input('Enter username: ')
     password = input('Enter password: ')
+    global LOGGED_IN_USER
+    LOGGED_IN_USER = username
 
     # Check if user exists and password is correct
     conn = sqlite3.connect('user_database.db')
@@ -176,7 +179,7 @@ def login():
 
 
 def logged_in():
-    global LOGGED_IN_FIRST, LOGGED_IN_LAST
+    global LOGGED_IN_FIRST, LOGGED_IN_LAST, LOGGED_IN_USER
 
     # Display page once logged in
     print('==========')
@@ -186,10 +189,12 @@ def logged_in():
     print('2. User Search')
     print('3. Learn Skill')
     print('4. Create Profile')  # Added option for profile creation/update
-    print('5. Useful Links')
-    print('6. InCollege Important Links')
-    print('7. View and Manage Connections')
-    print('8. Logout')
+    print('5. View Profile') # Added option to view profile
+    print('6. View Friend Profile') # Added option to view friend profile
+    print('7. Useful Links')
+    print('8. InCollege Important Links')
+    print('9. View and Manage Connections')
+    print('10. Logout')
 
     # Get user input
     decision = input("")
@@ -208,14 +213,18 @@ def logged_in():
     elif decision == '4':
         create_profile()  
     elif decision == '5':
+        view_own_profile(LOGGED_IN_USER)
+    elif decision == '6':
+        view_friends_profile(LOGGED_IN_USER)
+    elif decision == '7':
         logged_in = True
         conn = sqlite3.connect('user_database.db')
         useful_links(logged_in, conn)
-    elif decision == '6':
-        policies()
-    elif decision == '7':
-        view_and_disconnect_connections(LOGGED_IN_FIRST, LOGGED_IN_LAST)
     elif decision == '8':
+        policies()
+    elif decision == '9':
+        view_and_disconnect_connections(LOGGED_IN_FIRST, LOGGED_IN_LAST)
+    elif decision == '10':
         # Empty global vars upon logout
         LOGGED_IN_FIRST, LOGGED_IN_LAST = "", ""
         return
@@ -1174,6 +1183,76 @@ def view_and_disconnect_connections(logged_in_first, logged_in_last):
     elif decision == str(len(connections) + 4):
         logged_in()
 
+
+def view_own_profile(logged_in_user):
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+
+    db.execute("SELECT first_name, last_name, title, major, university, about FROM users WHERE username=?", (logged_in_user,))
+    profile_data = db.fetchone()
+
+    if profile_data:
+        first_name, last_name, title, major, university, about = profile_data
+        print(f"User Profile for {first_name} {last_name}:")
+        print(f"Title: {title}")
+        print(f"Major: {major}")
+        print(f"University: {university}")
+        print(f"About: {about}")
+
+        conn.close()
+        return profile_data
+    else:
+        print("Profile not found.")
+        conn.close()
+        return None
+
+
+def view_friends_profile(logged_in_user):
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+
+    db.execute("SELECT username FROM connections WHERE user=?", (logged_in_user,))
+    friends = db.fetchall()
+
+    if not friends:
+        print("You don't have any friends to view their profiles.")
+        conn.close()
+        return
+    
+    print("Your Friends:")
+    for idx, friend in enumerate(friends, start=1):
+        print(f"{idx}. {friend[0]}")
+
+    selection = input("Enter the number of the friend whose profile you want to view (0 to go back): ")
+
+    try:
+        selection = int(selection)
+    except ValueError:
+        print("Invalid input. Please enter a number.")
+        conn.close()
+        return
+    
+    if 0 < selection <= len(friends):
+        selected_friend = friends[selection - 1][0]
+
+        db.execute("SELECT title, major, university, about FROM users WHERE username=?", (selected_friend,))
+        friend_profile = db.fetchone()
+
+        if friend_profile:
+            title, major, university, about = friend_profile[0]
+            print(f"Profile of {selected_friend}:")
+            print(f"Title: {title}")
+            print(f"Major: {major}")
+            print(f"University: {university}")
+            print(f"About: {about}")
+        else:
+            print(f"{selected_friend} does not have a profile.")
+    elif selection == 0:
+        pass
+    else:
+        print("Invalid selection. Please select a valid friend.")
+
+    conn.close()
 
 if __name__ == "__main__":
     main()
