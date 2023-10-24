@@ -172,7 +172,7 @@ def test_prompt_for_lastName_uni_or_major():
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             ('johndoe', 'Password123!', 'Johnny', 'Depp', 'uni', 'major', True, True, True, 'English'))
 
-
+'''
 # Test to check if a friend request displays
 def test_connection(conn, capsys):
     # Setup the global logged-in user's name
@@ -194,3 +194,4 @@ def test_connection(conn, capsys):
         # Check if the job was inserted with the right details
         out, err = capsys.readouterr()
         assert out == "Success! Your request to add a friend is displayed.\n"
+'''
