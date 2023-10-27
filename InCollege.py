@@ -58,6 +58,7 @@ def main():
     FOREIGN KEY (username) REFERENCES users (username)
     )''')
 
+    # Table for friend requests
     db.execute('''
     CREATE TABLE IF NOT EXISTS friend_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,6 +68,10 @@ def main():
     FOREIGN KEY (from_user) REFERENCES users(username),
     FOREIGN KEY (to_user) REFERENCES users(username)
     )''')
+
+    # Table for jobs
+    db.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT PRIMARY KEY,description TEXT,employer TEXT,
+        location TEXT,salary TEXT, firstName TEXT, lastName TEXT)''')
 
     # Close connection
     conn.close()
@@ -116,6 +121,7 @@ def main():
     elif decision == '6':
         policies()
 
+
 def search_by_name(f_name, l_name):
     # Query for user by name
     conn = sqlite3.connect('user_database.db')
@@ -164,14 +170,6 @@ def login():
         LOGGED_IN_FIRST = output[2]
         LOGGED_IN_LAST = output[3]
         print('You have successfully logged in')
-
-        # Display any pending friend requests
-        #conn = sqlite3.connect('users_database.db')
-        #db = conn.cursor()
-        #db.execute("SELECT * FROM friend_requests WHERE to_user=?", (username,))
-        #requests = db.fetchall()
-        #conn.close()
-        #print(requests)
         logged_in()
     else:
         print('Incorrect username / password, please try again')
@@ -199,7 +197,7 @@ def logged_in():
     # Get user input
     decision = input("")
     while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5' \
-            and decision != '6' and decision != '7' and decision != '8':
+            and decision != '6' and decision != '7' and decision != '8' and decision != '9' and decision != '10':
         print('Please enter 1 - 8')
         decision = input("")
 
@@ -235,14 +233,6 @@ def job_search():
     print('Jobs')
     print('=====')
 
-    # Create jobs database
-    conn = sqlite3.connect("jobs.db")
-    db = conn.cursor()
-    db.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT PRIMARY KEY,description TEXT,employer TEXT,
-    location TEXT,salary TEXT, firstName TEXT, lastName TEXT)''')
-    conn.commit()
-    conn.close()
-
     # Create new job or search for a job
     print('1. Search for a job')
     print('2. Post a job')
@@ -267,8 +257,8 @@ def job_search():
 
 
 def post_job():
-    if num_jobs() >= 5:
-        print('5 jobs have already been posted')
+    if num_jobs() >= 10:
+        print('10 jobs have already been posted')
         print('1. Go back')
         decision = input("")
         while decision != "1":
@@ -432,6 +422,7 @@ def register(conn):
 
     conn.commit()
     conn.close()
+
 
 def create_profile():
     global LOGGED_IN_FIRST, LOGGED_IN_LAST
@@ -819,7 +810,7 @@ def policies():
     elif choice == '6':
         print("Cookie Policy")
         print("We only store essential cookies to make sure the user is authentic."
-              " This is also done to prevent any security vulnerabilites.")
+              " This is also done to prevent any security vulnerabilities.")
         print('1. Go back')
         decision = input("")
         while decision != '1':
@@ -1179,6 +1170,7 @@ def view_friends_profile(logged_in_user):
         print("Invalid selection. Please select a valid friend.")
 
     conn.close()
+
 
 if __name__ == "__main__":
     main()
