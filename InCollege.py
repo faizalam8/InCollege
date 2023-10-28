@@ -12,55 +12,54 @@ def main():
     db = conn.cursor()
     # Create database if it doesn't already exist
     db.execute('''CREATE TABLE IF NOT EXISTS users (
-    username TEXT PRIMARY KEY,
-    password TEXT,
-    first_name TEXT,
-    last_name TEXT,
-    email BOOLEAN,
-    sms BOOLEAN,
-    advertising BOOLEAN,
-    language TEXT,
-    university TEXT,
-    major TEXT,
-    title TEXT,
-    about TEXT,
-    user_id TEXT 
-    )''')
+        username TEXT PRIMARY KEY,
+        password TEXT,
+        first_name TEXT,
+        last_name TEXT,
+        email BOOLEAN,
+        sms BOOLEAN,
+        advertising BOOLEAN,
+        language TEXT,
+        university TEXT,
+        major TEXT,
+        title TEXT,
+        about TEXT,
+        user_id TEXT 
+        )''')
 
     # Table for student experiences 
     db.execute('''CREATE TABLE IF NOT EXISTS experiences (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT,
-    title TEXT,
-    employer TEXT,
-    date_started TEXT,
-    date_ended TEXT,
-    location TEXT,
-    description TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(username)
-)''')
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        title TEXT,
+        employer TEXT,
+        date_started TEXT,
+        date_ended TEXT,
+        location TEXT,
+        description TEXT,
+        FOREIGN KEY (user_id) REFERENCES users(username)
+        )''')
 
     # Table for student education
     db.execute('''CREATE TABLE IF NOT EXISTS educations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT,
-    school_name TEXT,
-    degree TEXT,
-    years_attended TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(username)
-)''')
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        school_name TEXT,
+        degree TEXT,
+        years_attended TEXT,
+        FOREIGN KEY (user_id) REFERENCES users(username)
+        )''')
 
     # Create the connections table
     db.execute('''CREATE TABLE IF NOT EXISTS connections (
-    user TEXT,
-    username TEXT,
-    FOREIGN KEY (user) REFERENCES users (username),
-    FOREIGN KEY (username) REFERENCES users (username)
-    )''')
+        user TEXT,
+        username TEXT,
+        FOREIGN KEY (user) REFERENCES users (username),
+        FOREIGN KEY (username) REFERENCES users (username)
+        )''')
 
     # Table for friend requests
-    db.execute('''
-    CREATE TABLE IF NOT EXISTS friend_requests (
+    db.execute('''CREATE TABLE IF NOT EXISTS friend_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     from_user TEXT,
     to_user TEXT,
@@ -70,8 +69,32 @@ def main():
     )''')
 
     # Table for jobs
-    db.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT PRIMARY KEY,description TEXT,employer TEXT,
-        location TEXT,salary TEXT, firstName TEXT, lastName TEXT)''')
+    db.execute('''CREATE TABLE IF NOT EXISTS jobs (
+        title TEXT PRIMARY KEY,
+        description TEXT,
+        employer TEXT,
+        location TEXT,
+        salary TEXT,
+        firstName TEXT,
+        lastName TEXT)''')
+
+    # Table for applications
+    db.execute('''CREATE TABLE IF NOT EXISTS applications (
+        user TEXT PRIMARY KEY,
+        jobTitle TEXT,
+        grad_date TEXT,
+        start_date TEXT,
+        paragraph TEXT,
+        FOREIGN KEY (user) REFERENCES users (username),
+        FOREIGN KEY (jobTitle) REFERENCES jobs (title))''')
+
+    # Table for saved jobs
+    db.execute('''CREATE TABLE IF NOT EXISTS savedJobs (
+            user TEXT,
+            jobTitle TEXT,
+            FOREIGN KEY (user) REFERENCES users (username),
+            FOREIGN KEY (jobTitle) REFERENCES jobs (title)
+            )''')
 
     # Close connection
     conn.close()
@@ -186,9 +209,9 @@ def logged_in():
     print('1. Job Search')
     print('2. User Search')
     print('3. Learn Skill')
-    print('4. Create Profile')  # Added option for profile creation/update
-    print('5. View Profile') # Added option to view profile
-    print('6. View Friend Profile') # Added option to view friend profile
+    print('4. Create Profile')          # Added option for profile creation/update
+    print('5. View Profile')            # Added option to view profile
+    print('6. View Friend Profile')     # Added option to view friend profile
     print('7. Useful Links')
     print('8. InCollege Important Links')
     print('9. View and Manage Connections')
@@ -198,7 +221,7 @@ def logged_in():
     decision = input("")
     while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5' \
             and decision != '6' and decision != '7' and decision != '8' and decision != '9' and decision != '10':
-        print('Please enter 1 - 8')
+        print('Please enter 1 - 10')
         decision = input("")
 
     # Route input to proper function
@@ -235,18 +258,19 @@ def job_search():
 
     # Create new job or search for a job
     print('1. Search for a job')
-    print('2. Post a job')
-    print('3. Go back')
+    print('2. View all jobs')
+    print('3. View applied jobs')
+    print('4. View non-applied jobs')
+    print('5. Post a job')
+    print('6. Delete a job')
+    print('7. Go back')
     decision = input("")
-    while decision != '1' and decision != '2' and decision != '3':
-        print('Please enter 1, 2, or 3')
+    while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5'\
+            and decision != '6' and decision != '7':
+        print('Please enter 1 - 7')
         decision = input("")
 
-    if decision == '2':
-        post_job()
-    elif decision == '3':
-        logged_in()
-    else:
+    if decision == '1':
         # JOB SEARCH IMPLEMENTATION [NOT COMPLETE]
         print('Under construction')
         print('1. Go back')
@@ -254,6 +278,150 @@ def job_search():
         while decision != "1":
             decision = input("")
         job_search()
+    elif decision == '2':
+        view_all_jobs()
+    elif decision == '3':
+        view_applied_jobs()
+    elif decision == '4':
+        view_non_applied_jobs()
+    elif decision == '5':
+        post_job()
+    elif decision == '6':
+        delete_job()
+    elif decision == '7':
+        logged_in()
+
+
+def delete_job():
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    title = input("Enter the name of the job to be deleted: ")
+    db.execute("SELECT * FROM jobs WHERE title=? AND firstName=? AND lastName=?",
+               (title, LOGGED_IN_FIRST, LOGGED_IN_LAST))
+
+    result = db.fetchone()
+
+    # If job exists, delete
+    if not result:
+        print(f'You have no job posting for {title}')
+    else:
+        job_to_delete = result[0]
+        db.execute("DELETE FROM jobs WHERE title=?", (job_to_delete,))
+        conn.commit()
+    conn.close()
+
+
+def view_all_jobs():
+    job_count = num_jobs()
+
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute("SELECT * FROM jobs")
+    result = db.fetchall()
+    conn.close()
+
+    # If no jobs
+    if job_count == 0:
+        print('There are currently no jobs available')
+        print('1. Go back')
+        decision = input('')
+        while decision != '1':
+            decision = input('')
+        job_search()
+        return
+
+    # Display all jobs
+    for i in range(job_count):
+        print(f'\n{i+1}. {result[i][0]}')
+        print('Description:', result[i][1])
+        print('Employer:', result[i][2])
+        print('Location:', result[i][3])
+        print('Salary:', result[i][4])
+
+    print("Select a job for more options or enter 0 to go back")
+    choice = int(input(''))
+    while choice > job_count:
+        choice = int(input(''))
+    if choice == 0:
+        job_search()
+        return
+
+    # Apply for job or save for later
+    choice = int(choice) - 1
+    selected_title = result[choice][0]
+    print(f'You selected {selected_title}')
+    print('1. Apply')
+    print('2. Save for later')
+    print('3. Go back')
+
+    decision = input('')
+    while decision != '1' and decision != '2' and decision != '3':
+        decision = input('')
+
+    if decision == '1':
+        # Check if user has already applied
+        conn = sqlite3.connect("user_database.db")
+        db = conn.cursor()
+        db.execute("SELECT * FROM applications WHERE user=?", (LOGGED_IN_USER,))
+        result = db.fetchone()
+
+        # If user has already applied
+        if result:
+            print('You have already applied to this job')
+            print('1. Go back')
+            choice = input('')
+            while choice != '1':
+                choice = input('')
+            job_search()
+            return
+
+        # Check if user is the owner of the job posting
+        db.execute("SELECT * FROM jobs WHERE firstName=? AND lastName=?", (LOGGED_IN_FIRST, LOGGED_IN_LAST))
+        result = db.fetchone()
+        if result:
+            print('You cannot apply to your own job posting')
+            print('1. Go back')
+            choice = input('')
+            while choice != '1':
+                choice = input('')
+            job_search()
+            return
+
+        grad_date = input('Enter grad date (MM/DD/YYYY): ')
+        start_date = input('Enter start date (MM/DD/YYYY): ')
+        paragraph = input('Why you would be a good fit: ')
+        apply_for_job(selected_title, grad_date, start_date, paragraph)
+
+    elif decision == '2':
+        save_job(selected_title)
+
+    elif decision == '3':
+        job_search()
+
+
+# TODO: retrieve job titles from applications where user = LOGGED_IN_USER and display
+def view_applied_jobs():
+    pass
+
+
+# TODO: retrieve all titles from jobs, then retrieve all jobTitles from applications table where user = LOGGED_IN_USER
+# TODO: then, display all job titles that have not been applied for
+def view_non_applied_jobs():
+    pass
+
+
+# TODO: save title and LOGGED_IN_USER into savedJobs database
+def save_job(title):
+    pass
+
+
+def apply_for_job(title, grad_date, start_date, paragraph):
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute("INSERT INTO applications (user, jobTitle, grad_date, start_date, paragraph) VALUES (?, ?, ?, ?, ?)",
+               (LOGGED_IN_USER, title, grad_date, start_date, paragraph))
+    conn.commit()
+    conn.close()
 
 
 def post_job():
@@ -264,6 +432,7 @@ def post_job():
         while decision != "1":
             decision = input("")
         job_search()
+        return
 
     title = input("Job title: ")
     description = input("Description: ")
@@ -271,7 +440,7 @@ def post_job():
     location = input("Location: ")
     salary = input("Salary: ")
 
-    conn = sqlite3.connect("jobs.db")
+    conn = sqlite3.connect("user_database.db")
     db = conn.cursor()
     db.execute('''INSERT INTO jobs (title, description, employer, location, salary, firstName, lastName)
      VALUES (?, ?, ?, ?, ?, ?, ?)''', (title, description, employer, location, salary, LOGGED_IN_FIRST, LOGGED_IN_LAST))
@@ -513,7 +682,7 @@ def num_registered_users():
 
 def num_jobs():
     # Return total job count
-    conn = sqlite3.connect("jobs.db")
+    conn = sqlite3.connect("user_database.db")
     db = conn.cursor()
     db.execute("SELECT COUNT(*) FROM jobs")
     result = db.fetchone()
