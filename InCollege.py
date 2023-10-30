@@ -261,13 +261,14 @@ def job_search():
     print('2. View all jobs')
     print('3. View applied jobs')
     print('4. View non-applied jobs')
-    print('5. Post a job')
-    print('6. Delete a job')
-    print('7. Go back')
+    print('5. View saved jobs')
+    print('6. Post a job')
+    print('7. Delete a job')
+    print('8. Go back')
     decision = input("")
     while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5' \
-            and decision != '6' and decision != '7':
-        print('Please enter 1 - 7')
+            and decision != '6' and decision != '7' and decision != '8':
+        print('Please enter 1 - 8')
         decision = input("")
 
     if decision == '1':
@@ -285,10 +286,12 @@ def job_search():
     elif decision == '4':
         view_non_applied_jobs()
     elif decision == '5':
-        post_job()
+        view_saved_jobs()
     elif decision == '6':
-        delete_job()
+        post_job()
     elif decision == '7':
+        delete_job()
+    elif decision == '8':
         logged_in()
 
 
@@ -399,20 +402,123 @@ def view_all_jobs():
         job_search()
 
 
-# TODO: retrieve job titles from applications where user = LOGGED_IN_USER and display
 def view_applied_jobs():
-    pass
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute("SELECT jobTitle FROM applications WHERE user=?", (LOGGED_IN_USER,))
+    result = db.fetchall()
+    conn.close()
+
+    if not result:
+        print("You haven't applied to any jobs")
+        print('1. Go back')
+        choice = input("")
+        while choice != '1':
+            choice = input("")
+        job_search()
+        return
+
+    print('You have applied to the following jobs:')
+    for i in range(len(result)):
+        print(f'{i+1}. {result[i][0]}')
+
+    print(f'{len(result)+1}. Go back')
+    choice = input("")
+    while choice != str(len(result)+1):
+        choice = input("")
+    job_search()
 
 
-# TODO: retrieve all titles from jobs, then retrieve all jobTitles from applications table where user = LOGGED_IN_USER
-# TODO: then, display all job titles that have not been applied for
 def view_non_applied_jobs():
-    pass
+    # Retrieve jobs not applied for
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute('''
+        SELECT j.title, j.description, j.employer, j.location, j.salary 
+        FROM jobs j
+        LEFT JOIN applications a 
+        ON j.title = a.jobTitle AND a.user = ? 
+        WHERE a.jobTitle IS NULL
+        ''', (LOGGED_IN_USER,))
+    result = db.fetchall()
+    conn.close()
+
+    if not result:
+        print('You have applied to all job postings')
+        print('1. Go back')
+        choice = input("")
+        while choice != '1':
+            choice = input("")
+        job_search()
+        return
+
+    for i in range(len(result)):
+        print(f'\n{i + 1}. {result[i][0]}')
+        print('Description:', result[i][1])
+        print('Employer:', result[i][2])
+        print('Location:', result[i][3])
+        print('Salary:', result[i][4])
+
+    print('Enter 0 to go back')
+    choice = input('')
+    while choice != '0':
+        choice = input('')
+    job_search()
+
+
+def view_saved_jobs():
+    # Retrieve and display saved jobs
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute("SELECT jobTitle FROM savedJobs WHERE user=?", (LOGGED_IN_USER,))
+    result = db.fetchall()
+    conn.close()
+
+    if not result:
+        print("You haven't saved any jobs")
+        print('1. Go back')
+        choice = input("")
+        while choice != '1':
+            choice = input("")
+        job_search()
+        return
+
+    print('You have saved the following jobs:')
+    for i in range(len(result)):
+        print(f'{i+1}. {result[i][0]}')
+    print(f'{len(result)+1}. Go back')
+
+    print('Selecting a job will unsave it')
+    choice = input("")
+    while int(choice) > len(result)+1 or int(choice) < 0:
+        choice = input("")
+
+    if choice == str(len(result)+1):
+        job_search()
+        return
+    else:
+        selected_job = int(choice) - 1
+        selected_job_title = result[selected_job][0]
+        unsave_job(selected_job_title)
+
+
+def unsave_job(title):
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute('''DELETE FROM savedJobs WHERE user=? AND jobTitle=?''', (LOGGED_IN_USER, title))
+    conn.commit()
+    conn.close()
+    print('Job removed from saved list!')
 
 
 # TODO: save title and LOGGED_IN_USER into savedJobs database
 def save_job(title):
-    pass
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute('''INSERT INTO savedJobs (user, jobTitle) VALUES (?, ?)''', (LOGGED_IN_USER, title))
+    conn.commit()
+    conn.close()
+    print('Job saved!')
 
 
 def apply_for_job(title, grad_date, start_date, paragraph):
@@ -422,6 +528,7 @@ def apply_for_job(title, grad_date, start_date, paragraph):
                (LOGGED_IN_USER, title, grad_date, start_date, paragraph))
     conn.commit()
     conn.close()
+    print('Application sent!')
 
 
 def post_job():
