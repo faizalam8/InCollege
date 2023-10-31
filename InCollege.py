@@ -270,7 +270,6 @@ def job_search():
             and decision != '6' and decision != '7' and decision != '8':
         print('Please enter 1 - 8')
         decision = input("")
-
     if decision == '1':
         # JOB SEARCH IMPLEMENTATION [NOT COMPLETE]
         print('Under construction')
