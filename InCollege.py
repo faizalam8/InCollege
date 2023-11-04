@@ -24,7 +24,9 @@ def main():
         major TEXT,
         title TEXT,
         about TEXT,
-        user_id TEXT 
+        user_id TEXT,
+        tier TEXT,
+        new_msg BOOLEAN
         )''')
 
     # Table for student experiences
@@ -49,6 +51,13 @@ def main():
         years_attended TEXT,
         FOREIGN KEY (user_id) REFERENCES users(username)
         )''')
+
+    # Table for messages
+    db.execute('''CREATE TABLE IF NOT EXISTS messages (
+            to_user TEXT,
+            from_user TEXT,
+            message TEXT
+            )''')
 
     # Create the connections table
     db.execute('''CREATE TABLE IF NOT EXISTS connections (
@@ -209,19 +218,21 @@ def logged_in():
     print('1. Job Search')
     print('2. User Search')
     print('3. Learn Skill')
-    print('4. Create Profile')  # Added option for profile creation/update
-    print('5. View Profile')  # Added option to view profile
-    print('6. View Friend Profile')  # Added option to view friend profile
-    print('7. Useful Links')
-    print('8. InCollege Important Links')
-    print('9. View and Manage Connections')
-    print('10. Logout')
+    print('4. Create Profile')
+    print('5. View Profile')
+    print('6. View Friend Profile')
+    print('7. Messages')
+    print('8. Useful Links')
+    print('9. InCollege Important Links')
+    print('10. View and Manage Connections')
+    print('11. Logout')
 
     # Get user input
     decision = input("")
     while decision != '1' and decision != '2' and decision != '3' and decision != '4' and decision != '5' \
-            and decision != '6' and decision != '7' and decision != '8' and decision != '9' and decision != '10':
-        print('Please enter 1 - 10')
+            and decision != '6' and decision != '7' and decision != '8' and decision != '9' and decision != '10'\
+            and decision != '11':
+        print('Please enter 1 - 11')
         decision = input("")
 
     # Route input to proper function
@@ -238,14 +249,16 @@ def logged_in():
     elif decision == '6':
         view_friends_profile(LOGGED_IN_USER)
     elif decision == '7':
+        messages()
+    elif decision == '8':
         logged_in = True
         conn = sqlite3.connect('user_database.db')
         useful_links(logged_in, conn)
-    elif decision == '8':
-        policies()
     elif decision == '9':
-        view_and_disconnect_connections(LOGGED_IN_FIRST, LOGGED_IN_LAST)
+        policies()
     elif decision == '10':
+        view_and_disconnect_connections(LOGGED_IN_FIRST, LOGGED_IN_LAST)
+    elif decision == '11':
         # Empty global vars upon logout
         LOGGED_IN_FIRST, LOGGED_IN_LAST = "", ""
         return
@@ -510,7 +523,6 @@ def unsave_job(title):
     print('Job removed from saved list!')
 
 
-# TODO: save title and LOGGED_IN_USER into savedJobs database
 def save_job(title):
     conn = sqlite3.connect("user_database.db")
     db = conn.cursor()
@@ -553,6 +565,85 @@ def post_job():
     conn.commit()
     conn.close()
     print("Success! Your job has been posted")
+
+
+def messages():
+    # Retrieve logged in user
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute("SELECT * FROM users WHERE first_name = ? AND last_name = ?", (LOGGED_IN_FIRST, LOGGED_IN_LAST))
+    result = db.fetchone()
+    conn.close()
+
+    username = result[0]
+    notif = result[14]
+    tier = result[13]
+
+    # Display any new user message notifications
+    if notif:
+        print('You have a new message!')
+        # TODO: Update username in users table -> set new_msg to False
+
+    # Do this for all standard users
+    if tier == 'standard':
+        print('1. Inbox')
+        print('2. Send a message')
+        choice = input('')
+        while choice != '1' and choice != '2':
+            choice = input('')
+
+        if choice == '1':
+            inbox(username)
+        elif choice == '2':
+            send_message(username)
+
+    # Do this for all plus users
+    elif tier == 'plus':
+        print('1. Inbox')
+        print('2. Send a message')
+
+        choice = input('')
+        while choice != '1' and choice != '2':
+            choice = input('')
+
+        if choice == '1':
+            inbox(username)
+        elif choice == '2':
+            send_message(None)
+
+
+# TODO: Display all messages from messages database where to_user=username
+def inbox(username):
+    pass
+
+
+def send_message(username):
+    # if None value is passed into function, we have a plus user. else, standard user
+    if not username:
+        conn = sqlite3.connect('user_database.db')
+        db = conn.cursor()
+        db.execute('SELECT username FROM users')
+        all_users = db.fetchall()
+        conn.close()
+
+        print('Select a user to send a message or enter 0 to go back')
+        for i in range(len(all_users)):
+            print(f'{i+1}. {all_users[i][0]}')
+
+        choice = int(input(''))
+        while choice < 0 or choice > len(all_users):
+            choice = int(input(''))
+
+        # TODO: Once a user is selected, determine the recipient's username
+        # TODO: then, save to_user as the recipient's username and from_user as LOGGED_IN_USER and message into
+        # TODO: messages database
+        # TODO: After sending a message, update recipient's record in users database -> change new_msg to True
+        message_to_send = input('Enter message: ')
+
+    else:
+        # TODO: Display all friends of username
+        # TODO: Implement same functionality
+        pass
 
 
 def find_user():
@@ -671,6 +762,11 @@ def register(conn):
     l_name = input('Last name: ')
     uni = input('University name: ')
     major = input('Major: ')
+    tier = input('Select tier (standard/plus): ')
+    while tier.lower() != 'standard' and tier.lower() != 'plus':
+        tier = input('')
+    tier = tier.lower()
+
     username = input('Enter username: ')
 
     # Check if username exists
@@ -691,10 +787,10 @@ def register(conn):
     # Insert account into database
     db = conn.cursor()
     db.execute("INSERT INTO users (username, password, first_name, last_name, university, major, email, sms,"
-               "advertising, language, user_id)"
-               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+               "advertising, language, user_id, tier, new_msg)"
+               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                (username, password, f_name, l_name, uni, major, True, True, True, 'English',
-                f"{f_name} {l_name}"))
+                f"{f_name} {l_name}", tier, False))
 
     conn.commit()
     conn.close()
