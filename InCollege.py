@@ -573,7 +573,7 @@ def messages():
     db = conn.cursor()
     db.execute("SELECT * FROM users WHERE first_name = ? AND last_name = ?", (LOGGED_IN_FIRST, LOGGED_IN_LAST))
     result = db.fetchone()
-    conn.close()
+    
 
     username = result[0]
     notif = result[14]
@@ -583,6 +583,10 @@ def messages():
     if notif:
         print('You have a new message!')
         # TODO: Update username in users table -> set new_msg to False
+        db.execute('''INSERT INTO users (new_msg) VALUES (?)''', (False))
+        conn.commit()
+        conn.close()
+        
 
     # Do this for all standard users
     if tier == 'standard':
@@ -614,9 +618,13 @@ def messages():
 
 # TODO: Display all messages from messages database where to_user=username
 def inbox(username):
-    pass
-
-
+    conn = sqlite3.connect("user_database.db")
+    db = conn.cursor()
+    db.execute("SELECT * FROM messages WHERE  to_user = ?", (username))
+    result = db.fetchone()
+    print(result)
+    conn.close()
+    
 def send_message(username):
     # if None value is passed into function, we have a plus user. else, standard user
     if not username:
@@ -624,7 +632,7 @@ def send_message(username):
         db = conn.cursor()
         db.execute('SELECT username FROM users')
         all_users = db.fetchall()
-        conn.close()
+        
 
         print('Select a user to send a message or enter 0 to go back')
         for i in range(len(all_users)):
@@ -639,11 +647,17 @@ def send_message(username):
         # TODO: messages database
         # TODO: After sending a message, update recipient's record in users database -> change new_msg to True
         message_to_send = input('Enter message: ')
+        db.execute('''INSERT INTO messages(to_user, from_user, message) VALUES (?, ?, ?)''', (username, LOGGED_IN_USER, message_to_send))
+        conn.commit()
+        db.execute('''INSERT INTO users(new_msg) VALUES (?)''', (True))
+        conn.commit()
+        conn.close()
 
     else:
         # TODO: Display all friends of username
         # TODO: Implement same functionality
-        pass
+        view_friends_profile(username)
+        conn.close()
 
 
 def find_user():
