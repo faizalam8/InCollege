@@ -675,9 +675,20 @@ def send_message(username):
 
     else:
         # TODO: Display all friends of username in the SAME manner as the FIRST 'if not username' statement in THIS function
-        # TODO: After displaying users, allow selection of a user and ask for message input.
-        # TODO: After that, input the proper variables into the messages table and UPDATE new_msg to be True for the recipient
-        pass
+        conn = sqlite3.connect('user_database.db')
+        db = conn.cursor()
+        db.execute("SELECT username FROM users WHERE username = ?", (LOGGED_IN_USER,))
+        all_users = db.fetchall()
+        recipient = input('Enter the user you are sending the message to from the above usernames:')
+        message_to_send = input('Enter message: ')
+        db.execute("INSERT INTO messages (to_user, from_user, message) VALUES (?, ?, ?)",
+                   (recipient, LOGGED_IN_USER, message_to_send))
+        conn.commit()
+        db.execute("UPDATE users SET new_msg=? WHERE username=?", (True, recipient))
+        conn.commit()
+        conn.close()
+        print('Message has been sent!')
+        
 
 
 def find_user():
