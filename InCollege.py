@@ -573,7 +573,6 @@ def messages():
     db = conn.cursor()
     db.execute("SELECT * FROM users WHERE first_name = ? AND last_name = ?", (LOGGED_IN_FIRST, LOGGED_IN_LAST))
     result = db.fetchone()
-    
 
     username = result[0]
     notif = result[14]
@@ -582,57 +581,73 @@ def messages():
     # Display any new user message notifications
     if notif:
         print('You have a new message!')
-        # TODO: Update username in users table -> set new_msg to False
-        db.execute('''INSERT INTO users (new_msg) VALUES (?)''', (False))
+        db.execute("UPDATE users SET new_msg=? WHERE username=?", (False, LOGGED_IN_USER))
         conn.commit()
         conn.close()
-        
 
     # Do this for all standard users
     if tier == 'standard':
         print('1. Inbox')
         print('2. Send a message')
+        print('3. Go back')
         choice = input('')
-        while choice != '1' and choice != '2':
+        while choice != '1' and choice != '2' and choice != '3':
             choice = input('')
 
         if choice == '1':
             inbox(username)
         elif choice == '2':
             send_message(username)
+        elif choice == '3':
+            logged_in()
 
     # Do this for all plus users
     elif tier == 'plus':
         print('1. Inbox')
         print('2. Send a message')
+        print('3. Go back')
 
         choice = input('')
-        while choice != '1' and choice != '2':
+        while choice != '1' and choice != '2' and choice != '3':
             choice = input('')
 
         if choice == '1':
             inbox(username)
         elif choice == '2':
             send_message(None)
+        elif choice == '3':
+            logged_in()
 
 
-# TODO: Display all messages from messages database where to_user=username
 def inbox(username):
     conn = sqlite3.connect("user_database.db")
     db = conn.cursor()
-    db.execute("SELECT * FROM messages WHERE  to_user = ?", (username))
-    result = db.fetchone()
-    print(result)
+    db.execute("SELECT * FROM messages WHERE to_user=?", (username,))
+    result = db.fetchall()
     conn.close()
-    
+
+    # If inbox is empty
+    if not result:
+        print('You have no messages in your inbox')
+        print('1. Go back')
+        choice = input('')
+        while choice != '1':
+            choice = input('')
+        messages()
+    else:
+        for i in range(len(result)):
+            from_user = result[i][1]
+            message = result[i][2]
+            print(f'From {from_user}: {message}')
+
+
 def send_message(username):
     # if None value is passed into function, we have a plus user. else, standard user
     if not username:
         conn = sqlite3.connect('user_database.db')
         db = conn.cursor()
-        db.execute('SELECT username FROM users')
+        db.execute("SELECT username FROM users WHERE username != ?", (LOGGED_IN_USER,))
         all_users = db.fetchall()
-        
 
         print('Select a user to send a message or enter 0 to go back')
         for i in range(len(all_users)):
@@ -642,22 +657,27 @@ def send_message(username):
         while choice < 0 or choice > len(all_users):
             choice = int(input(''))
 
-        # TODO: Once a user is selected, determine the recipient's username
-        # TODO: then, save to_user as the recipient's username and from_user as LOGGED_IN_USER and message into
-        # TODO: messages database
-        # TODO: After sending a message, update recipient's record in users database -> change new_msg to True
+        # If user chooses to go back
+        if choice == 0:
+            messages()
+            return
+
+        recipient = all_users[choice-1][0]
+
         message_to_send = input('Enter message: ')
-        db.execute('''INSERT INTO messages(to_user, from_user, message) VALUES (?, ?, ?)''', (username, LOGGED_IN_USER, message_to_send))
+        db.execute("INSERT INTO messages (to_user, from_user, message) VALUES (?, ?, ?)",
+                   (recipient, LOGGED_IN_USER, message_to_send))
         conn.commit()
-        db.execute('''INSERT INTO users(new_msg) VALUES (?)''', (True))
+        db.execute("UPDATE users SET new_msg=? WHERE username=?", (True, recipient))
         conn.commit()
         conn.close()
+        print('Message has been sent!')
 
     else:
-        # TODO: Display all friends of username
-        # TODO: Implement same functionality
-        view_friends_profile(username)
-        conn.close()
+        # TODO: Display all friends of username in the SAME manner as the FIRST 'if not username' statement in THIS function
+        # TODO: After displaying users, allow selection of a user and ask for message input.
+        # TODO: After that, input the proper variables into the messages table and UPDATE new_msg to be True for the recipient
+        pass
 
 
 def find_user():
