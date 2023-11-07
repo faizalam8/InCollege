@@ -624,7 +624,6 @@ def inbox(username):
     db = conn.cursor()
     db.execute("SELECT * FROM messages WHERE to_user=?", (username,))
     result = db.fetchall()
-    conn.close()
 
     # If inbox is empty
     if not result:
@@ -635,10 +634,49 @@ def inbox(username):
             choice = input('')
         messages()
     else:
+        print('Select a message to open or enter 0 to go back: ')
         for i in range(len(result)):
             from_user = result[i][1]
-            message = result[i][2]
-            print(f'From {from_user}: {message}')
+            print(f'{i+1}. {from_user}')
+
+        choice = int(input(''))
+        while choice < 0 or choice > len(result):
+            choice = int(input(''))
+
+        # If user chooses to go back
+        if choice == 0:
+            messages()
+            return
+
+        # Display selected message
+        print(f'From {result[choice-1][1]}:')
+        print(result[choice-1][2])
+
+        print('\n1. Reply to message')
+        print('2. Delete message')
+        print('3. Go back')
+        decision = input('')
+        while decision != '1' and decision != '2' and decision != '3':
+            decision = input('')
+
+        # Send message
+        if decision == '1':
+            message_to_send = input('Enter message: ')
+            db.execute("INSERT INTO messages (to_user, from_user, message) VALUES (?, ?, ?)",
+                       (result[choice - 1][1], LOGGED_IN_USER, message_to_send))
+            conn.commit()
+            print('Message has been sent!')
+
+        # Delete message
+        elif decision == '2':
+            db.execute("DELETE FROM messages WHERE to_user=? AND from_user=? AND message=?",
+                       (LOGGED_IN_USER, result[choice - 1][1], result[choice - 1][2]))
+            conn.commit()
+            print('Message deleted!')
+        elif decision == '3':
+            messages()
+
+    conn.close()
 
 
 def send_message(username):
@@ -648,6 +686,16 @@ def send_message(username):
         db = conn.cursor()
         db.execute("SELECT username FROM users WHERE username != ?", (LOGGED_IN_USER,))
         all_users = db.fetchall()
+
+        # If no other users exist
+        if not all_users:
+            print('There are no other existing users')
+            print('1. Go back')
+            choice = input('')
+            while choice != '1':
+                choice = input('')
+            messages()
+            return
 
         print('Select a user to send a message or enter 0 to go back')
         for i in range(len(all_users)):
@@ -674,13 +722,37 @@ def send_message(username):
         print('Message has been sent!')
 
     else:
-        # TODO: Display all friends of username in the SAME manner as the FIRST 'if not username' statement in THIS function
         conn = sqlite3.connect('user_database.db')
         db = conn.cursor()
-        db.execute("SELECT username FROM users WHERE username = ?", (LOGGED_IN_USER,))
-        all_users = db.fetchall()
-        recipient = input('Enter the user you are sending the message to from the above usernames:')
+        db.execute("SELECT username FROM connections WHERE user = ?", (LOGGED_IN_USER,))
+        all_friends = db.fetchall()
+
+        # If user has no connections
+        if not all_friends:
+            print('You have no connections to send messages to')
+            print('1. Go back')
+            choice = input('')
+            while choice != '1':
+                choice = input('')
+            messages()
+            return
+
+        print('Select a user to send a message or enter 0 to go back')
+        for i in range(len(all_friends)):
+            print(f'{i + 1}. {all_friends[i][0]}')
+
+        choice = int(input(''))
+        while choice < 0 or choice > len(all_friends):
+            choice = int(input(''))
+
+        # If user chooses to go back
+        if choice == 0:
+            messages()
+            return
+
+        recipient = all_friends[choice-1][0]
         message_to_send = input('Enter message: ')
+
         db.execute("INSERT INTO messages (to_user, from_user, message) VALUES (?, ?, ?)",
                    (recipient, LOGGED_IN_USER, message_to_send))
         conn.commit()
@@ -688,7 +760,6 @@ def send_message(username):
         conn.commit()
         conn.close()
         print('Message has been sent!')
-        
 
 
 def find_user():
@@ -1410,6 +1481,7 @@ def accept_friend_request(new_friend_first, new_friend_last, to_user):
 
     conn.commit()
     conn.close()
+    print('Friend request accepted!')
 
 
 def view_and_accept_friend_requests(logged_in_first, logged_in_last):
@@ -1439,6 +1511,7 @@ def view_and_accept_friend_requests(logged_in_first, logged_in_last):
         while int(choice) > len(pending_requests):
             choice = input("")
         if choice == '0':
+            logged_in()
             return
 
         actual_choice = int(choice) - 1
