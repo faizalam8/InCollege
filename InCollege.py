@@ -1678,6 +1678,7 @@ def view_friends_profile(logged_in_user):
 
     conn.close()
 
+
 def notify_new_user(conn, new_username):
     cursor = conn.cursor()
     cursor.execute("SELECT username FROM users WHERE username != ?", (new_username,))
@@ -1704,15 +1705,21 @@ def check_deleted_jobs(conn, user_id):
         message = result[0]
         print(message)'''
 
+
 def check_new_students_join(conn, user_id):
     cursor = conn.cursor()
     query = "SELECT message FROM notifications WHERE user_id = ? AND message LIKE ?"
-    cursor.execute(query, (user_id, f"%{user_id} has joined InCollege%"))
+    cursor.execute(query, (user_id, "%has joined InCollege%"))
     results = cursor.fetchall()
     if results:
         for result in results:
             message = result[0]
             print(message)
+
+    # Drop old notifications for current user
+    cursor.execute("DELETE FROM notifications WHERE user_id = ?", (user_id,))
+    conn.commit()
+
 
 if __name__ == "__main__":
     main()
