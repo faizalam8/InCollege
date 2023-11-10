@@ -104,6 +104,13 @@ def main():
             FOREIGN KEY (user) REFERENCES users (username),
             FOREIGN KEY (jobTitle) REFERENCES jobs (title)
             )''')
+    
+    db.execute('''CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT,
+            message TEXT,
+            is_read BOOLEAN DEFAULT 0
+            )''')
 
     # Close connection
     conn.close()
@@ -210,6 +217,13 @@ def login():
 
 def logged_in():
     global LOGGED_IN_FIRST, LOGGED_IN_LAST, LOGGED_IN_USER
+
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+    '''check_new_job_postings(conn, LOGGED_IN_USER)
+    check_deleted_jobs(conn, LOGGED_IN_USER)'''
+    check_new_students_join(conn, LOGGED_IN_USER)
+    conn.close()
 
     # Display page once logged in
     print('==========')
@@ -909,6 +923,7 @@ def register(conn):
                 f"{f_name} {l_name}", tier, False))
 
     conn.commit()
+    notify_new_user(conn, username)
     conn.close()
 
 
@@ -1663,6 +1678,41 @@ def view_friends_profile(logged_in_user):
 
     conn.close()
 
+def notify_new_user(conn, new_username):
+    cursor = conn.cursor()
+    cursor.execute("SELECT username FROM users WHERE username != ?", (new_username,))
+    existing_users = cursor.fetchall()
+    for user in existing_users:
+        user_id = user[0]
+        message = f"{new_username} has joined InCollege"
+        cursor.execute("INSERT INTO notifications (user_id, message) VALUES (?, ?)", (user_id, message))
+        conn.commit()
+
+'''def check_new_job_postings(conn, user_id):
+    cursor = conn.cursor()
+    cursor.execute("SELECT title FROM jobs WHERE title NOT IN (SELECT message FROM notifications WHERE user_id = ?) LIMIT 1", (user_id,))
+    result = cursor.fetchone()
+    if result:
+        job_title = result[0]
+        print(f"A new job has been posted: {job_title}")
+
+def check_deleted_jobs(conn, user_id):
+    cursor = conn.cursor()
+    cursor.execute("SELECT message FROM notifications WHERE user_id = ? AND message LIKE 'A job that you applied for has been deleted%'", (user_id,))
+    result = cursor.fetchone()
+    if result:
+        message = result[0]
+        print(message)'''
+
+def check_new_students_join(conn, user_id):
+    cursor = conn.cursor()
+    query = "SELECT message FROM notifications WHERE user_id = ? AND message LIKE ?"
+    cursor.execute(query, (user_id, f"%{user_id} has joined InCollege%"))
+    results = cursor.fetchall()
+    if results:
+        for result in results:
+            message = result[0]
+            print(message)
 
 if __name__ == "__main__":
     main()
