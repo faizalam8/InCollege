@@ -220,8 +220,8 @@ def logged_in():
 
     conn = sqlite3.connect('user_database.db')
     db = conn.cursor()
-    '''check_new_job_postings(conn, LOGGED_IN_USER)
-    check_deleted_jobs(conn, LOGGED_IN_USER)'''
+    check_new_job_postings(conn, LOGGED_IN_USER)
+    check_deleted_jobs(conn, LOGGED_IN_USER)
     check_new_students_join(conn, LOGGED_IN_USER)
     conn.close()
 
@@ -1689,7 +1689,7 @@ def notify_new_user(conn, new_username):
         cursor.execute("INSERT INTO notifications (user_id, message) VALUES (?, ?)", (user_id, message))
         conn.commit()
 
-'''def check_new_job_postings(conn, user_id):
+def check_new_job_postings(conn, user_id):
     cursor = conn.cursor()
     cursor.execute("SELECT title FROM jobs WHERE title NOT IN (SELECT message FROM notifications WHERE user_id = ?) LIMIT 1", (user_id,))
     result = cursor.fetchone()
@@ -1703,7 +1703,7 @@ def check_deleted_jobs(conn, user_id):
     result = cursor.fetchone()
     if result:
         message = result[0]
-        print(message)'''
+        print(message)
 
 
 def check_new_students_join(conn, user_id):
