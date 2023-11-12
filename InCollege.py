@@ -155,7 +155,6 @@ def main():
         f_name = input("First: ")
         l_name = input("Last: ")
         search_by_name(f_name, l_name)
-        print("Don't forget to create a profile!")
     elif decision == '5':
         logged_in = False
         useful_links(logged_in, conn)
@@ -173,6 +172,7 @@ def search_by_name(f_name, l_name):
 
     if not user:
         print('They are not yet a part of the InCollege system yet')
+        print("Don't forget to create a profile!")
         print('1. Go Back')
         decision = input("")
         while decision != '1':
@@ -180,6 +180,7 @@ def search_by_name(f_name, l_name):
         main()
     else:
         print('They are a part of the InCollege system')
+        print("Don't forget to create a profile!")
         print('1. Go Back')
         decision = input("")
         while decision != '1':
