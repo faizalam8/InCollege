@@ -145,6 +145,7 @@ def main():
         register(conn)
     elif decision == '3':
         print('Video is now playing')
+        print("Don't forget to create a profile!")
         print('1. Go Back')
         decision = input("")
         while decision != '1':
@@ -154,6 +155,7 @@ def main():
         f_name = input("First: ")
         l_name = input("Last: ")
         search_by_name(f_name, l_name)
+        print("Don't forget to create a profile!")
     elif decision == '5':
         logged_in = False
         useful_links(logged_in, conn)
@@ -342,6 +344,7 @@ def delete_job():
 
 def view_all_jobs():
     job_count = num_jobs()
+    print(f'The number of jobs you have currently applied for is {job_count} jobs')
 
     conn = sqlite3.connect("user_database.db")
     db = conn.cursor()
