@@ -301,13 +301,10 @@ def job_search():
         print('Please enter 1 - 8')
         decision = input("")
     if decision == '1':
-        # JOB SEARCH IMPLEMENTATION [NOT COMPLETE]
-        print('Under construction')
-        print('1. Go back')
-        decision = input("")
-        while decision != "1":
-            decision = input("")
-        job_search()
+        #updated job search 
+        title = input("Title:")
+        search_job(title)
+        #print('Under construction')       
     elif decision == '2':
         view_all_jobs()
     elif decision == '3':
@@ -323,6 +320,33 @@ def job_search():
     elif decision == '8':
         logged_in()
 
+def search_job(title):
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+    db.execute("SELECT * FROM jobs WHERE title=?", (title))
+    user = db.fetchone()
+    conn.close()
+    
+    if user:
+        print("The job you searched for does exist")
+        print("Here are the details:")
+        print("Job title:", user[0])
+        print("Description", user[1])
+        print("Employer", user[2])
+        print("Location", user[3])
+        print("Salary:", user[4])
+        print('1. Go back')
+        decision = input("")
+        while decision != "1":
+            decision = input("")
+        job_search()
+    else:
+        print("The job you searched for does not exist!")
+        print('1. Go Back')
+        decision = input("")
+        while decision != '1':
+            decision = input('')
+        job_search()
 
 def delete_job():
     conn = sqlite3.connect("user_database.db")
