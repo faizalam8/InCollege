@@ -1699,12 +1699,21 @@ def check_new_job_postings(conn, user_id):
 
 def check_deleted_jobs(conn, user_id):
     cursor = conn.cursor()
-    cursor.execute("SELECT message FROM notifications WHERE user_id = ? AND message LIKE 'A job that you applied for has been deleted%'", (user_id,))
+    cursor.execute("""
+        SELECT 1
+        FROM applications AS a
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM jobs AS j
+            WHERE j.title = a.jobTitle
+        )
+        AND a.user = ?
+        LIMIT 1
+    """, (user_id,))
+    
     result = cursor.fetchone()
     if result:
-        message = result[0]
-        print(message)
-
+        print("A job that you applied for has been deleted.")
 
 def check_new_students_join(conn, user_id):
     cursor = conn.cursor()
