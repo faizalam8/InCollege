@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 # Global vars to keep track of logged-in user
 LOGGED_IN_FIRST = ""
@@ -26,7 +27,8 @@ def main():
         about TEXT,
         user_id TEXT,
         tier TEXT,
-        new_msg BOOLEAN
+        new_msg BOOLEAN,
+        register_date TEXT
         )''')
 
     # Table for student experiences
@@ -223,6 +225,7 @@ def logged_in():
     check_new_job_postings(conn, LOGGED_IN_USER)
     check_deleted_jobs(conn, LOGGED_IN_USER)
     check_new_students_join(conn, LOGGED_IN_USER)
+    check_lazy_user(conn)
     conn.close()
 
     # Display page once logged in
@@ -298,13 +301,8 @@ def job_search():
         print('Please enter 1 - 8')
         decision = input("")
     if decision == '1':
-        # JOB SEARCH IMPLEMENTATION [NOT COMPLETE]
-        print('Under construction')
-        print('1. Go back')
-        decision = input("")
-        while decision != "1":
-            decision = input("")
-        job_search()
+        title = input("Title: ")
+        search_for_job(title)
     elif decision == '2':
         view_all_jobs()
     elif decision == '3':
@@ -319,6 +317,35 @@ def job_search():
         delete_job()
     elif decision == '8':
         logged_in()
+
+
+def search_for_job(title):
+    conn = sqlite3.connect('user_database.db')
+    db = conn.cursor()
+    db.execute("SELECT * FROM jobs WHERE title=?", (title,))
+    job_selection = db.fetchone()
+    conn.close()
+
+    if job_selection:
+        print("The job you searched for does exist")
+        print("Here are the details:")
+        print("Job title:", job_selection[0])
+        print("Description", job_selection[1])
+        print("Employer", job_selection[2])
+        print("Location", job_selection[3])
+        print("Salary:", job_selection[4])
+        print('1. Go back')
+        decision = input("")
+        while decision != "1":
+            decision = input("")
+        job_search()
+    else:
+        print("The job you searched for does not exist!")
+        print('1. Go Back')
+        decision = input("")
+        while decision != '1':
+            decision = input('')
+        job_search()
 
 
 def delete_job():
@@ -444,7 +471,7 @@ def view_applied_jobs():
         job_search()
         return
 
-    print('You have applied to the following jobs:')
+    print(f'You have currently applied for {len(result)} jobs:')
     for i in range(len(result)):
         print(f'{i+1}. {result[i][0]}')
 
@@ -917,10 +944,10 @@ def register(conn):
     # Insert account into database
     db = conn.cursor()
     db.execute("INSERT INTO users (username, password, first_name, last_name, university, major, email, sms,"
-               "advertising, language, user_id, tier, new_msg)"
-               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+               "advertising, language, user_id, tier, new_msg, register_date)"
+               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                (username, password, f_name, l_name, uni, major, True, True, True, 'English',
-                f"{f_name} {l_name}", tier, False))
+                f"{f_name} {l_name}", tier, False, datetime.now().strftime("%Y-%m-%d")))
 
     conn.commit()
     notify_new_user(conn, username)
@@ -946,7 +973,7 @@ def create_profile():
         profile_data['about'] = input('Enter about paragraph: ')
 
         # Construct user_id
-        user_id = f"{LOGGED_IN_FIRST} {LOGGED_IN_LAST}"
+        user_id = LOGGED_IN_USER
 
         conn = sqlite3.connect('user_database.db')
         db = conn.cursor()
@@ -957,8 +984,9 @@ def create_profile():
 
         # User can enter up to 3 experiences
         for _ in range(3):
-            title = input('Enter experience title (or leave empty to finish): ')
-            if not title:
+            title = input('Enter experience title (or enter Q to finish): ')
+            print('YOUR TITLE INPUT:', title)
+            if title.lower() == 'q':
                 break
             employer = input('Enter employer: ')
             date_started = input('Enter date started: ')
@@ -1615,6 +1643,11 @@ def view_own_profile(logged_in_user):
                (logged_in_user,))
     profile_data = db.fetchone()
 
+    db.execute('SELECT * FROM experiences WHERE user_id=?', (logged_in_user,))
+    experiences_data = db.fetchone()
+    print(experiences_data)
+    conn.close()
+
     if profile_data:
         first_name, last_name, title, major, university, about = profile_data
         print(f"User Profile for {first_name} {last_name}:")
@@ -1622,13 +1655,14 @@ def view_own_profile(logged_in_user):
         print(f"Major: {major}")
         print(f"University: {university}")
         print(f"About: {about}")
-
-        conn.close()
-        return profile_data
+        print('1. Go back')
+        choice = input('')
+        while choice != '1':
+            choice = input('')
+        logged_in()
+        return
     else:
         print("Profile not found.")
-        conn.close()
-        return None
 
 
 def view_friends_profile(logged_in_user):
@@ -1641,6 +1675,11 @@ def view_friends_profile(logged_in_user):
     if not friends:
         print("You don't have any friends to view their profiles.")
         conn.close()
+        print('1. Go back')
+        choice = input('')
+        while choice != '1':
+            choice = input('')
+        logged_in()
         return
 
     print("Your Friends:")
@@ -1653,6 +1692,7 @@ def view_friends_profile(logged_in_user):
         selection = int(selection)
     except ValueError:
         print("Invalid input. Please enter a number.")
+        selection = input('')
         conn.close()
         return
 
@@ -1661,22 +1701,28 @@ def view_friends_profile(logged_in_user):
 
         db.execute("SELECT title, major, university, about FROM users WHERE username=?", (selected_friend,))
         friend_profile = db.fetchone()
+        conn.close()
 
         if friend_profile:
-            title, major, university, about = friend_profile[0]
+            title, major, university, about = friend_profile
             print(f"Profile of {selected_friend}:")
             print(f"Title: {title}")
             print(f"Major: {major}")
             print(f"University: {university}")
             print(f"About: {about}")
+            print('1. Go back')
+            choice = input('')
+            while choice != '1':
+                choice = input('')
+            logged_in()
+            return
         else:
             print(f"{selected_friend} does not have a profile.")
     elif selection == 0:
-        pass
+        conn.close()
+        logged_in()
     else:
         print("Invalid selection. Please select a valid friend.")
-
-    conn.close()
 
 
 def notify_new_user(conn, new_username):
@@ -1689,6 +1735,7 @@ def notify_new_user(conn, new_username):
         cursor.execute("INSERT INTO notifications (user_id, message) VALUES (?, ?)", (user_id, message))
         conn.commit()
 
+
 def check_new_job_postings(conn, user_id):
     cursor = conn.cursor()
     cursor.execute("SELECT title FROM jobs WHERE title NOT IN (SELECT message FROM notifications WHERE user_id = ?) LIMIT 1", (user_id,))
@@ -1696,6 +1743,7 @@ def check_new_job_postings(conn, user_id):
     if result:
         job_title = result[0]
         print(f"A new job has been posted: {job_title}")
+
 
 def check_deleted_jobs(conn, user_id):
     cursor = conn.cursor()
@@ -1715,6 +1763,7 @@ def check_deleted_jobs(conn, user_id):
     if result:
         print("A job that you applied for has been deleted.")
 
+
 def check_new_students_join(conn, user_id):
     cursor = conn.cursor()
     query = "SELECT message FROM notifications WHERE user_id = ? AND message LIKE ?"
@@ -1728,6 +1777,20 @@ def check_new_students_join(conn, user_id):
     # Drop old notifications for current user
     cursor.execute("DELETE FROM notifications WHERE user_id = ?", (user_id,))
     conn.commit()
+
+
+def check_lazy_user(conn):
+    db = conn.cursor()
+    db.execute("SELECT jobTitle FROM applications WHERE user=?", (LOGGED_IN_USER,))
+    jobs_applied = db.fetchall()
+
+    result = db.execute("SELECT register_date FROM users WHERE username=?", (LOGGED_IN_USER,))
+    register_date = result.fetchone()[0]
+    register_date = datetime.strptime(register_date, "%Y-%m-%d")
+
+    if jobs_applied == 0 and (datetime.now() - register_date).days >= 7:
+        print("Remember - you're going to want to have a job when you graduate."
+              "Make sure that you start to apply for jobs today!")
 
 
 if __name__ == "__main__":
